@@ -12,7 +12,7 @@ type Elevator struct{
 	lastDir 	elevdriver.Direction_t
 	lastFloor 	int
 	orders		[][]bool
-	newOrder	chan bool
+	newOrder	chan bool   // ser dir?
 	timer       chan bool
 	buttonChan 	chan elevdriver.Button
 	floorChan 	chan int

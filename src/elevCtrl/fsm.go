@@ -31,40 +31,46 @@ func (elev *Elevator)action_start_down(){
 	elevdriver.MotorDown(elev.motorChan)
 	elev.state = MOVING_DOWN
 	elev.lastDir = elevdriver.DOWN
-	fmt.Println("fsm: MOVING_DOWN")
+	fmt.Println("fsm: MOVING_DOWN\n")
 }
 
 func (elev *Elevator)action_start_up(){
 	elevdriver.MotorUp(elev.motorChan)
 	elev.state = MOVING_UP
 	elev.lastDir = elevdriver.UP
-	fmt.Println("fsm: MOVING_UP")
+	fmt.Println("fsm: MOVING_UP\n")
 }
 
 func (elev *Elevator)action_exec(){
 	elevdriver.OpenDoor()
+	elevdriver.SetLight(elev.lastFloor, elev.lastDir)
 	//start_timer()	
 	//order_executed()
 	elev.state = DOORS_OPEN 
-	elevdriver.SetLight(elev.lastFloor, elev.lastDir)
-	fmt.Println("fsm: DOORS_OPEN")
+	fmt.Println("fsm: DOORS_OPEN\n")
 }
 
 func (elev *Elevator)action_halt_n_exec(){
 	elevdriver.MotorStop(elev.motorChan)
 	elevdriver.OpenDoor()
+	elevdriver.SetLight(elev.lastFloor, elev.lastDir)
 	//start_timer()	
 	//order_executed()
 	elev.state = DOORS_OPEN 
-	elevdriver.SetLight(elev.lastFloor, elev.lastDir)
-	fmt.Println("fsm: DOORS_OPEN")
+	fmt.Println("fsm: DOORS_OPEN\n")
 }
 
 func (elev *Elevator)action_done(){
 	elevdriver.CloseDoor()
 	// stop_timer()
+	elev.lastDir = elev.get_nearest_order()
 	elev.state = IDLE
-	fmt.Println("fsm: IDLE")
+	fmt.Println("fsm: IDLE\n")
+	elev.ready
+}
+
+func (elev *Elevator)action_next(){
+    elev.handle_new_order()
 }
 
 func (elev *Elevator)action_stop(){
@@ -77,18 +83,19 @@ func (elev *Elevator)action_pause(){
 }
 
 func action_dummy(){
-	fmt.Println("fsm: dummy!")
+	fmt.Println("fsm: dummy!\n")
 }
 
 /* Finite State Machine */
 func (elev *Elevator)fsm_init(){
 	elev.fsm_table = [][]func(){
-/*STATES:	\	EVENTS:	//start_down			//start_up				//exec_order			//timeout			
-/*IDLE		 */	[]func(){elev.action_start_down, elev.action_start_up, 	elev.action_exec,	    action_dummy},	
-/*DOORS_OPEN */	[]func(){action_dummy, 			action_dummy, 			elev.action_exec,	    elev.action_done},	
-/*MOVING_UP	 */ []func(){action_dummy, 			action_dummy, 			elev.action_halt_n_exec,action_dummy},
-/*MOVING_DOWN*/	[]func(){action_dummy, 			action_dummy,			elev.action_halt_n_exec,action_dummy}, 
-
+/*STATES:	  \	EVENTS:	//start_down			   //start_up              //exec_order			//timeout			   //ready
+/*IDLE       */  []func(){elev.action_start_down, elev.action_start_up,elev.action_exec,	      action_dummy,       elev.action_next},
+/*DOORS_OPEN */  []func(){elev.action_start_down, elev.action_start_up,elev.action_exec,	      elev.action_done,   action_dummy},  
+/*MOVING_UP  */  []func(){action_dummy, 		      action_dummy,        elev.action_halt_n_exec,action_dummy,       action_dummy},
+/*MOVING_DOWN*/  []func(){action_dummy, 		      action_dummy,			elev.action_halt_n_exec,action_dummy,       action_dummy},
+/*EMG_STOP   */  []func(){action_dummy, 		      action_dummy,			action_dummy,           action_dummy,       action_dummy},  
+/*OBST       */  []func(){action_dummy, 		      action_dummy,			action_dummy,           action_dummy,       action_dummy}, 
 	}
 }
 
@@ -108,38 +115,44 @@ func (elev *Elevator)get_nearest_order() elevdriver.Direction_t{
 	return elevdriver.UP
 }
 
+func (elev *Elevator)handle_new_order(){
+    if elev.state == IDLE{
+	    switch(elev.get_nearest_order()){
+	    case elevdriver.UP:
+	       elev.fsm_update(start_up)
+	    case elevdriver.DOWN:
+	       elev.fsm_update(start_down)
+	    case elevdriver.NONE:
+	       elev.state = IDLE
+	       fmt.Println("fsm: IDLE")
+	    default:
+	       fmt.Println("fsm: ERROR, undefined elev.lastDir in execute_next_order")
+	    }
+	}else{
+	    fmt.Println("fsm: new order registered, will be executed when I'm ready")
+}
+
 func (elev *Elevator)fsm_generate_n_handle_events(){
-	select{
-
-	case <- elev.stopButtonChan:
-		elev.fsm_update(stop)
-
-	case <- elev.obsChan:
-		elev.fsm_update(obst)
-
-	case floor:=<- elev.floorChan:
-		if floor != -1{
-			elev.lastFloor = floor
-			//set floor_light
-			if elev.should_stop(floor){
-				elev.fsm_update(exec_order)
-			}
-		}
-	case <- elev.newOrder:
-		nextDir := elev.get_nearest_order()
-		if elev.state == IDLE{
-			switch nextDir{
-			case elevdriver.UP:
-				elev.fsm_update(start_down)	
-	
-			case elevdriver.DOWN:
-				elev.fsm_update(start_up)
-
-			case elevdriver.NONE:
-				elev.fsm_update(exec_order)
-			}
-		}
-	case <-elev.timer:
-	    elev.fsm_update(timeout)	
+	for{
+	   select{
+	   case <- elev.stopButtonChan:
+		   elev.fsm_update(stop)
+	   case <- elev.obsChan:
+		   elev.fsm_update(obst)
+	   case floor:=<- elev.floorChan:
+		   if floor != -1{
+			   elev.lastFloor = floor
+			   //set floor_light
+			   if elev.should_stop(floor){
+				   elev.fsm_update(exec_order)
+			   }
+		   }
+	   case <- elev.newOrder:
+		   elev.handle_new_order()
+       case <-elev.timer:
+	       elev.fsm_update(timeout)	
+	   case <-elev.ready:
+	       elev.fsm_update(ready)
+	   }
 	}
 }
