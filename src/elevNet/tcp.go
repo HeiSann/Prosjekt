@@ -16,12 +16,14 @@ func ManageTCPCom(){
 
 	for {	
 		select{
-		case newTcpCon:=<- tcpChan.new_conn:
-			registerNewCon(newTcpCon)
-		case ip:=<-ElevNetChan.ConnectToElev:
+		case newTcpCon := <-internalChan.new_conn:
+			elevNetMaps.registerNewCon(newTcpCon)
+		case ip := <-ExternalChan.ConnectToElev:
 			ConnectTcp(ip)
-		case msg:=<-ElevNetChan.SendMsg:
-			SendTcpMsg(msg)	
+		case msg := <-ExternalChan.SendMsg:
+			SendTcpMsg(msg)
+        case ip := <-internalChan.dead_elev:
+            elevNetMaps.deleteCon(ip)
 			
 		}//end select
 	}//end for
@@ -36,7 +38,7 @@ func listenMsg(con net.Conn){
 			//fmt.Println("error in listen")			
 		}else{
 			msg:=message.Bytestream2message(bstream)
-			ElevNetChan.RecvMsg<-msg
+			ExternalChan.RecvMsg<-msg
 			
 		}
 	}
@@ -52,7 +54,7 @@ func listenTcpCon(){
 		if err != nil {
 			return
 		}else{
-			tcpChan.new_conn<-con
+			internalChan.new_conn<-con
 			fmt.Println("recieved connection, sending to handle")   			
    		}
    	}
@@ -61,7 +63,7 @@ func listenTcpCon(){
 func SendTcpMsg(msg message.Message){
 	ipAddr := msg.To
 	bstream:=message.Message2bytestream(msg)
-	con, ok :=ElevNetMap.TcpConsMap[ipAddr]
+	con, ok :=elevNetMaps.TcpConsMap[ipAddr]
 	switch ok{
 	case true:
 		_, err := con.Write(bstream)
@@ -90,29 +92,38 @@ func ConnectTcp(ipAdr string){
 				atmpts++
 			}else{
 				fmt.Println("connection ok")
-				tcpChan.new_conn<-con
+				internalChan.new_conn<-con
 				break
 			}
 		}//end BIG if/else		
 	}//end for
 }
 
-func registerNewCon(con net.Conn){ //ta inn conn
+func (elevNetMaps *elevNetMap)registerNewCon(con net.Conn){ //ta inn conn
 	fmt.Println("handle new Con")
 	ip:= getConIp(con)
 
-	_, ok := ElevNetMap.TcpConsMap[ip]
+	_, ok := elevNetMaps.TcpConsMap[ip]
 	
 	if !ok{	
 		fmt.Println(ok)
 		fmt.Println("connection not in map, adding connection")
-		ElevNetMap.TcpConsMap[ip]=con
+		elevNetMaps.TcpConsMap[ip]=con
 		go listenMsg(con)
 	}else{
 		fmt.Println("connection already excist")
 	}
 }
 
+func (elevNetMaps *elevNetMap) deleteCon(ip string){
+    _, ok :=elevNetMaps.TcpConsMap[ip]
+    if !ok{
+        fmt.Println("connection already lost")
+    }else{
+        elevNetMaps.TcpConsMap[ip].Close()
+        delete(elevNetMaps.TcpConsMap,ip)   
+    }
+}
 
 
 func getConIp(con net.Conn)(ip string){

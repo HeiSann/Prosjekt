@@ -1,4 +1,6 @@
 package message
+import "time"
+import "strconv"
 
 
 import "strings"
@@ -33,3 +35,13 @@ func Bytestream2message(m []byte) Message{
 	return msg
 }
 
+func ConstructPing(ipTo string, ipFrom string)Message{
+    timestamp:=time.Now().Unix()
+    stimestamp:=strconv.FormatInt(timestamp,10)
+    return Message{ipTo, ipFrom, "PING", stimestamp}
+}
+
+func Construct(ipTo string, ipFrom string)Message{
+    
+return Message{ipTo, ipFrom, "SDfs","msg"}
+}

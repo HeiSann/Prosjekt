@@ -5,28 +5,30 @@ import( "time"
         "strconv"
 
        )
+const PING_TIMEOUT_SECONDS = 1
+const SLEEP_TIME = 100
 
-//new channels fix this
+//new channels fix this, only for oversikt
 var timerOut chan bool
 var newip chan string
 var pingMsg chan message.Message
 var deadElev chan string
 var newPing chan string
 
-const PING_TIMEOUT_SECONDS = 1
+
 
 func refreshNetwork(pingmap map[string]int64){
     for{
         select{
-        case newip:=<-newPing:
-            pingmap[newip]=0
-        case msg:=<-pingMsg:
+        case newip := <-newPing:
+            pingmap[newip] = 0
+        case msg := <-pingMsg:
             _, ok := pingmap[msg.From]
             if ok{
-                pingmap[msg.From],_=strconv.ParseInt(msg.Payload,10,64)
+                pingmap[msg.From],_ =strconv.ParseInt(msg.Payload,10,64)//ParseInt converts string to int64 with base 10
             }else{
                 fmt.Println("ip address not registered")
-                //send msg connect to 
+                //handle this. For example send connect to me msg over tcp 
             }                
         case <-timerOut:
             for ip,t := range pingmap{
@@ -34,8 +36,11 @@ func refreshNetwork(pingmap map[string]int64){
                     checkIfAlive(ip)
                 }
             }
-        case deadIp:=<-deadElev:
+        case deadIp := <-deadElev:
             delete(pingmap,deadIp)
+        default:
+            time.Sleep(time.Millisecond*SLEEP_TIME) //change. Needs to sleep less then a second
+            //ElevNetChan.SendMsg<-Ping
         }//end select
     }//end for
 }

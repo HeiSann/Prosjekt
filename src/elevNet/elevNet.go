@@ -6,15 +6,15 @@ import("time")
 const TARGET_PORT = "20011"
 const LISTEN_PORT = "30011"
 
-type ElevNetMaps struct{
+type ElevNetMap struct{
     TcpConsMap map[string]net.Conn
     PingTimeMap map[string]time.Time
 }
-var ElevNetMap ElevNetMaps
+var elevNetMaps ElevNetMap
 
-func ElevNetMapInit(){
-    ElevNetMap.TcpConsMap = make(map[string]net.Conn)
-    ElevNetMap.PingTimeMap =make(map[string]time.Time)
+func (elevNetMaps *ElevNetMap) init(){
+    elevNetMaps.TcpConsMap = make(map[string]net.Conn)
+    elevNetMaps.PingTimeMap =make(map[string]time.Time)
 }
 
 
@@ -25,28 +25,29 @@ type ElevNetChannels struct{
 	ConnectToElev chan string
 }
     
-var ElevNetChan ElevNetChannels
-
-func ElevNetChanInit(){
-	ElevNetChan.RecvMsg = make(chan message.Message,255)
-	ElevNetChan.SendMsg = make(chan message.Message,255)
-	ElevNetChan.SendBcast = make(chan message.Message,255)
-	ElevNetChan.ConnectToElev = make(chan string,255)
-
-}
-
-type TcpChannels struct{
+type internalChannels struct{
 	connect_to chan bool
-	dead_elev chan bool
+	dead_elev chan string
 	new_conn chan net.Conn
 	send_msg chan message.Message
 }
 	
-var tcpChan TcpChannels
+var internalChan internalChannels
+var ExternalChan ElevNetChannels
 
-func TcpChanInit(){
-	tcpChan.connect_to = make(chan bool, 255)
-	tcpChan.dead_elev = make(chan bool, 255)
-	tcpChan.new_conn = make(chan net.Conn, 255)
-	tcpChan.send_msg = make(chan message.Message)
+func (ExternalChan *ElevNetChannels)Init(){
+	ExternalChan.RecvMsg = make(chan message.Message,255)
+	ExternalChan.SendMsg = make(chan message.Message,255)
+	ExternalChan.SendBcast = make(chan message.Message,255)
+	ExternalChan.ConnectToElev = make(chan string,255)
+
+}
+
+
+
+func (internalChan *internalChannels) NetChanInit(){
+	internalChan.connect_to = make(chan bool, 255)
+	internalChan.dead_elev = make(chan string, 255)
+	internalChan.new_conn = make(chan net.Conn, 255)
+	internalChan.send_msg = make(chan message.Message)
 }
