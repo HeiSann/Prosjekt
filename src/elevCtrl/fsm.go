@@ -2,7 +2,8 @@ package elevCtrl
 
 import (
 	"fmt"
-	"elevdriver"
+	"elevTypes"
+	"elevDrivers"
 )
 
 type State_t int
@@ -27,41 +28,41 @@ const(
 )
 
 /* 	FSM Actions */
-func (elev *Elevator)action_start_down(){
-	elevdriver.MotorDown(elev.motorChan)
+func (elev *Fsm_s)action_start_down(){
+   elev.motorChan <- elevTypes.DOWM
 	elev.state = MOVING_DOWN
-	elev.lastDir = elevdriver.DOWN
+	elev.lastDir = elevTypes.DOWN
 	fmt.Println("fsm: MOVING_DOWN\n")
 }
 
-func (elev *Elevator)action_start_up(){
-	elevdriver.MotorUp(elev.motorChan)
+func (elev *Fsm_s)action_start_up(){
+	elev.motorChan <- elevTypes.UP
 	elev.state = MOVING_UP
-	elev.lastDir = elevdriver.UP
+	elev.lastDir = elevTypes.UP
 	fmt.Println("fsm: MOVING_UP\n")
 }
 
-func (elev *Elevator)action_exec(){
-	elevdriver.OpenDoor()
-	elevdriver.SetLight(elev.lastFloor, elev.lastDir)
+func (elev *Fsm_s)action_exec(){
+	elevDrivers.OpenDoor()
+	elevDrivers.SetLight(elev.lastFloor, elev.lastDir)
 	//start_timer()	
 	//order_executed()
 	elev.state = DOORS_OPEN 
 	fmt.Println("fsm: DOORS_OPEN\n")
 }
 
-func (elev *Elevator)action_halt_n_exec(){
-	elevdriver.MotorStop(elev.motorChan)
-	elevdriver.OpenDoor()
-	elevdriver.SetLight(elev.lastFloor, elev.lastDir)
+func (elev *Fsm_s)action_halt_n_exec(){
+	elev.motorChan <- elevTypes.NONE
+	elevDrivers.OpenDoor()
+	elevDrivers.SetLight(elev.lastFloor, elev.lastDir)
 	//start_timer()	
 	//order_executed()
 	elev.state = DOORS_OPEN 
 	fmt.Println("fsm: DOORS_OPEN\n")
 }
 
-func (elev *Elevator)action_done(){
-	elevdriver.CloseDoor()
+func (elev *Fsm_s)action_done(){
+	elevDrivers.CloseDoor()
 	// stop_timer()
 	elev.lastDir = elev.get_nearest_order()
 	elev.state = IDLE
@@ -69,16 +70,16 @@ func (elev *Elevator)action_done(){
 	elev.ready
 }
 
-func (elev *Elevator)action_next(){
+func (elev *Fsm_s)action_next(){
     elev.handle_new_order()
 }
 
-func (elev *Elevator)action_stop(){
-	elevdriver.MotorStop(elev.motorChan)
+func (elev *Fsm_s)action_stop(){
+	elevDrivers.MotorStop(elev.motorChan)
 	elev.state = EMG
 }
 
-func (elev *Elevator)action_pause(){
+func (elev *Fsm_s)action_pause(){
 	elev.state = OBST
 }
 
@@ -87,7 +88,7 @@ func action_dummy(){
 }
 
 /* Finite State Machine */
-func (elev *Elevator)fsm_init(){
+func (elev *Fsm_s)fsm_init(){
 	elev.fsm_table = [][]func(){
 /*STATES:	  \	EVENTS:	//start_down			   //start_up              //exec_order			//timeout			   //ready
 /*IDLE       */  []func(){elev.action_start_down, elev.action_start_up,elev.action_exec,	      action_dummy,       elev.action_next},
@@ -100,29 +101,29 @@ func (elev *Elevator)fsm_init(){
 }
 
 /* FSM help functions */
-func (elev *Elevator)fsm_update(event Event_t){
+func (elev *Fsm_s)fsm_update(event Event_t){
 	elev.fsm_table[elev.state][event]()
 }
 
-func (elev *Elevator)should_stop(floor int) bool{
+func (elev *Fsm_s)should_stop(floor int) bool{
 	//communicate with orders and check if current floor got pending orders in correct direction
 	stop := true	
 	return stop
 }
 
-func (elev *Elevator)get_nearest_order() elevdriver.Direction_t{
+func (elev *Fsm_s)get_nearest_order() elevTypes.Direction_t{
 	//communicate with orders and get next direction
-	return elevdriver.UP
+	return elevTypes.UP
 }
 
-func (elev *Elevator)handle_new_order(){
+func (elev *Fsm_s)handle_new_order(){
     if elev.state == IDLE{
 	    switch(elev.get_nearest_order()){
-	    case elevdriver.UP:
+	    case elevType.UP:
 	       elev.fsm_update(start_up)
-	    case elevdriver.DOWN:
+	    case elevType.DOWN:
 	       elev.fsm_update(start_down)
-	    case elevdriver.NONE:
+	    case elevType.NONE:
 	       elev.state = IDLE
 	       fmt.Println("fsm: IDLE")
 	    default:
@@ -130,9 +131,10 @@ func (elev *Elevator)handle_new_order(){
 	    }
 	}else{
 	    fmt.Println("fsm: new order registered, will be executed when I'm ready")
+   }
 }
 
-func (elev *Elevator)fsm_generate_n_handle_events(){
+func (elev *Fsm_s)fsm_generate_n_handle_events(){
 	for{
 	   select{
 	   case <- elev.stopButtonChan:

@@ -2,48 +2,49 @@ package elevCtrl
 
 import (
 	"fmt"
-	"elevdriver"
+	"elevTypes"
 )
 
-
-type Elevator struct{
-	fsm_table	[][]func()
-	state 		State_t
-	lastDir 	elevdriver.Direction_t
-	lastFloor 	int
-	orders		[][]bool
-	newOrder	chan bool   // ser dir?
-	timer       chan bool
-	buttonChan 	chan elevdriver.Button
-	floorChan 	chan int
-	motorChan 	chan elevdriver.Direction_t
-	stopButtonChan chan bool
-	obsChan 	chan bool
+type Coms_s struct{
+   buttonChan        chan int elevTypes.Button
+   sensorChan        chan int int
+   stopButtonChan    chan bool
+   obsChan           chan bool
+   
+   motorChan         chan elevTypes.Direction_t
+   doorChan          chan bool
+   lightChan         chan elevTypes.Order_t
+   floorIndChan      chan int 
+   
+   OrderExecuted     chan elevTypes.Order_t  //fsm -> orders
+   NewOrders         chan elevTypes.Order_t  //orders -> orders
+   emgTrigger        chan bool               //orders -> fsm
 }
 
-func (elev *Elevator)ElevInit(	
-		buttonChan chan elevdriver.Button,
-		sensorChan chan int,
-		motorChan chan elevdriver.Direction_t,
-		stopButtonChan chan bool,
-		obsChan chan bool){
+type Fsm_s struct{
+   fsm_table	[][]func()
+	state 		State_t
+	lastDir 	   elevTypes.Direction_t
+	lastFloor   int 
+	Coms        Coms_s
+}
 
-    fmt.Println("elevCtrl: Initializng...")
-    elevdriver.InitElev(
-	buttonChan, 
-	sensorChan, 
-	motorChan,
-	stopButtonChan, 
-	obsChan)
 
-    elev = &Elevator{
-        state:          IDLE,
-        lastDir:      	elevdriver.NONE,
-        lastFloor:      -1,
-    }
-       
-    //go emergWatcher()
-    //go obsWatcher()
-    //go floorWatcher()
-    fmt.Println("elevCtrl: Init OK!")
+func Init(
+   buttonChan     chan elevTypes.Button,
+   sensorChan     chan int,
+   motorChan      chan elevTypes.Direction_t,
+   stopButtonChan chan bool,
+   obsChan        chan bool,
+   OrderExecuted  chan elevTypes.Order_t)Fsm_s{
+
+
+   fmt.Println("elevCtrl.init()...")
+   
+   //use function for this
+   var table [][]func()
+	
+	fmt.Println("OK")
+   
+   return Fsm_s{table, IDLE, elevTypes.NONE, 1}
 }
