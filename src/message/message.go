@@ -11,9 +11,6 @@ type Message struct{
 	Payload string
 }
 
-
-
-
 func ConstructMessage(adr string, typ string, msg string) Message{
 	return Message{adr,typ,msg}
 }
