@@ -11,26 +11,27 @@ const TCP_PORT = "30000" //All elevators will listen to this port for TCP connec
 const BUFF_SIZE = 1024
 
 
-func ManageTCPCom(){	
-	go listenTcpCon()
+func (elevNet *ElevNet_s)ManageTCPCom(){	
+	go elevNet.intComs.listenTcpCon()
 
+	tcpConnections:= make(map[string]net.Conn)
+	
 	for {	
 		select{
-		case newTcpCon := <-internalChan.new_conn:
-			elevNetMaps.registerNewCon(newTcpCon)
-		case ip := <-ExternalChan.ConnectToElev:
-			ConnectTcp(ip)
-		case msg := <-ExternalChan.SendMsg:
-			SendTcpMsg(msg)
-        case ip := <-internalChan.dead_elev:
-            elevNetMaps.deleteCon(ip)
+		case newTcpCon := <-elevNet.intComs.new_conn:
+			elevNet.ExtComs.registerNewCon(newTcpCon, tcpConnections)
+		case ip := <-elevNet.ExtComs.ConnectToElev:
+			elevNet.intComs.ConnectElev(ip)
+		case msg := <-elevNet.ExtComs.SendMsg:
+			SendTcpMsg(msg, tcpConnections)
+        case ip := <-elevNet.intComs.dead_elev:
+            deleteCon(ip, tcpConnections)
 			
 		}//end select
 	}//end for
 }
 
-
-func listenMsg(con net.Conn){
+func (toComsMan *ExternalChan_s) listenForTcpMsg (con net.Conn){
 	bstream := make([]byte, BUFF_SIZE)
     for {
 		_, err := con.Read(bstream[0:])
@@ -38,13 +39,13 @@ func listenMsg(con net.Conn){
 			//fmt.Println("error in listen")			
 		}else{
 			msg:=message.Bytestream2message(bstream)
-			ExternalChan.RecvMsg<-msg
+			toComsMan.RecvMsg<-msg
 			
 		}
 	}
 }
 
-func listenTcpCon(){
+func (toManager *InternalChan_s)listenTcpCon(){
 	localAddr, err := net.ResolveTCPAddr("tcp",":"+TCP_PORT)
 	sock, err := net.ListenTCP("tcp", localAddr)
 	if err != nil { return }
@@ -54,16 +55,16 @@ func listenTcpCon(){
 		if err != nil {
 			return
 		}else{
-			internalChan.new_conn<-con
+			toManager.new_conn<-con
 			fmt.Println("recieved connection, sending to handle")   			
    		}
    	}
 }	
 
-func SendTcpMsg(msg message.Message){
+func SendTcpMsg(msg message.Message, tcpConnections map[string]net.Conn){
 	ipAddr := msg.To
 	bstream:=message.Message2bytestream(msg)
-	con, ok :=elevNetMaps.TcpConsMap[ipAddr]
+	con, ok :=tcpConnections[ipAddr]
 	switch ok{
 	case true:
 		_, err := con.Write(bstream)
@@ -78,7 +79,7 @@ func SendTcpMsg(msg message.Message){
 }	
 
 
-func ConnectTcp(ipAdr string){
+func (toManager *InternalChan_s)ConnectElev(ipAdr string){
 	atmpts:=0
 	for atmpts < CON_ATMPTS{
 		serverAddr, err := net.ResolveTCPAddr("tcp",ipAdr+":"+TCP_PORT)
@@ -92,36 +93,36 @@ func ConnectTcp(ipAdr string){
 				atmpts++
 			}else{
 				fmt.Println("connection ok")
-				internalChan.new_conn<-con
+				toManager.new_conn<-con
 				break
 			}
 		}//end BIG if/else		
 	}//end for
 }
 
-func (elevNetMaps *elevNetMap)registerNewCon(con net.Conn){ //ta inn conn
+func (recv *ExternalChan_s)registerNewCon(con net.Conn, tcpConnections map[string]net.Conn){ //ta inn conn
 	fmt.Println("handle new Con")
 	ip:= getConIp(con)
 
-	_, ok := elevNetMaps.TcpConsMap[ip]
+	_, ok := tcpConnections[ip]
 	
 	if !ok{	
 		fmt.Println(ok)
 		fmt.Println("connection not in map, adding connection")
-		elevNetMaps.TcpConsMap[ip]=con
-		go listenMsg(con)
+		tcpConnections[ip]=con
+		go recv.listenForTcpMsg(con)
 	}else{
 		fmt.Println("connection already excist")
 	}
 }
 
-func (elevNetMaps *elevNetMap) deleteCon(ip string){
-    _, ok :=elevNetMaps.TcpConsMap[ip]
+func deleteCon(ip string, tcpConnections map[string]net.Conn){
+    _, ok :=tcpConnections[ip]
     if !ok{
         fmt.Println("connection already lost")
     }else{
-        elevNetMaps.TcpConsMap[ip].Close()
-        delete(elevNetMaps.TcpConsMap,ip)   
+        tcpConnections[ip].Close()
+        delete(tcpConnections,ip)   
     }
 }
 

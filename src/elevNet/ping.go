@@ -1,11 +1,10 @@
 package elevNet
 import( "time"
         "message"
-        "fmt"
         "strconv"
 
        )
-const PING_TIMEOUT_SECONDS = 1
+const PING_TIMEOUT_NANO = 20000
 const SLEEP_TIME = 100
 
 //new channels fix this, only for oversikt
@@ -17,32 +16,65 @@ var newPing chan string
 
 
 
-func refreshNetwork(pingmap map[string]int64){
+func refreshNetwork(){
+	elevPingTimes:=make(map[string]int64)
     for{
         select{
+        
         case newip := <-newPing:
-            pingmap[newip] = 0
+            newPinger(elevPingTimes, newip)
+            
         case msg := <-pingMsg:
-            _, ok := pingmap[msg.From]
-            if ok{
-                pingmap[msg.From],_ =strconv.ParseInt(msg.Payload,10,64)//ParseInt converts string to int64 with base 10
-            }else{
-                fmt.Println("ip address not registered")
-                //handle this. For example send connect to me msg over tcp 
-            }                
+			updatePingTime(elevPingTimes,msg) 
+			                
         case <-timerOut:
-            for ip,t := range pingmap{
-                if t>time.Now().Unix()-int64(time.Second*PING_TIMEOUT_SECONDS){
-                    checkIfAlive(ip)
-                }
-            }
+			performTimeControl(elevPingTimes)
+			
         case deadIp := <-deadElev:
-            delete(pingmap,deadIp)
+            deletePinger(elevPingTimes,deadIp)
+            
         default:
             time.Sleep(time.Millisecond*SLEEP_TIME) //change. Needs to sleep less then a second
-            //ElevNetChan.SendMsg<-Ping
+            BroadCastPing()
         }//end select
     }//end for
+}
+
+func newPinger(pingMap map[string]int64,ip string){
+	_, inMap :=pingMap[ip]
+	if !inMap{
+		pingMap[ip]=0.0
+	}
+}
+
+func updatePingTime(pingMap map[string]int64, msg message.Message){
+	_, inMap := pingMap[msg.From]
+	if inMap{
+		newtime,_:=strconv.ParseInt(msg.Payload,10,64) //Converts the message payload fro sting to int64
+		pingMap[msg.From]=newtime
+	}else{
+		//handle the situation when an elevator tries to ping and is not stored in the map(not a tcp connection)
+	}
+}
+
+func performTimeControl(pingMap map[string]int64){
+	timelimit:=time.Nanosecond.Nanoseconds()*PING_TIMEOUT_NANO //converts nanosecond(type duration) to int 64 nanosecond
+	currentTime :=time.Now().UnixNano() //returns current time in nanosecods
+	
+	for ip,pingtime := range pingMap{
+		if pingtime>currentTime-timelimit{
+			checkIfAlive(ip)
+	    }
+    }
+}
+
+func deletePinger(pingMap map[string]int64, ip string){
+	delete(pingMap,ip)
+}
+
+func BroadCastPing(){
+	//construct Ping msg and broadcast
+	//Bcast<-pingmsg
 }
 
 func checkIfAlive(ipadr string){
@@ -52,8 +84,11 @@ func checkIfAlive(ipadr string){
 
 func pingTimer(timeOut chan bool){
     for{
-        time.Sleep(time.Second*PING_TIMEOUT_SECONDS)
+        time.Sleep(time.Nanosecond*PING_TIMEOUT_NANO)
         timeOut<-true
     }
 }
+
             
+//hva hvis error når man sender melding over nettverk. Kanskje en kanal som sender den ikke sendte meldingen tilbake til comsManager som sender den dit den kom fra??
+
