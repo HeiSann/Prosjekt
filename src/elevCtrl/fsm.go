@@ -44,9 +44,9 @@ func (self *Fsm_s)action_start_up(){
 
 func (self *Fsm_s)action_exec(){
 	self.Coms.doorOpenChan <- true
-	elevDrivers.SetLight(elev.lastFloor, elev.lastDir)    //TODO: fix with channels
-	//start_timer()	
-	//order_executed()
+	self.Coms.setLightChan <- Light_t{self.lastFloor, self.lastDir, false}
+	self.startTimerChan <- true
+	orderExdChan <- Order_t{self.lastFloor, self.lastDir,false}
 	self.state = DOORS_OPEN 
 	fmt.Println("fsm: DOORS_OPEN\n")
 }
@@ -54,21 +54,21 @@ func (self *Fsm_s)action_exec(){
 func (self *Fsm_s)action_halt_n_exec(){
 	self.Coms.motorChan <- elevTypes.NONE
 	self.Coms.doorOpenChan <- true
-	elevDrivers.SetLight(elev.lastFloor, elev.lastDir)    //TODO: fix with channels
-	//start_timer()	
-	//order_executed()
+	self.Coms.setLightChan <- Light_t{self.lastFloor, self.lastDir, false}
+	self.startTimerChan <- true	
+	orderExdChan <- Order_t{self.lastFloor, self.lastDir,false}
 	self.state = DOORS_OPEN 
 	fmt.Println("fsm: DOORS_OPEN\n")
 }
 
 func (self *Fsm_s)action_done(){
 	self.Coms.doorOpenChan <- false
-	// stop_timer()
 	self.lastDir = elev.get_nearest_order()
 	self.state = IDLE
 	fmt.Println("fsm: IDLE\n")
-	self.ready()                                          //TODO: fix 
-
+	self.readyChan <- true
+}   
+	
 func (self *Fsm_s)action_next(){
     self.handle_new_order()
 }
@@ -88,14 +88,14 @@ func action_dummy(){
 
 /* Finite State Machine */
 func (elev *Fsm_s)fsm_init(){
-	elev.fsm_table = [][]func(){
-/*STATES:	  \	EVENTS:	//start_down			   //start_up              //exec_order			//timeout			   //ready
-/*IDLE       */  []func(){elev.action_start_down, elev.action_start_up,elev.action_exec,	      action_dummy,       elev.action_next},
-/*DOORS_OPEN */  []func(){elev.action_start_down, elev.action_start_up,elev.action_exec,	      elev.action_done,   action_dummy},  
-/*MOVING_UP  */  []func(){action_dummy, 		      action_dummy,        elev.action_halt_n_exec,action_dummy,       action_dummy},
-/*MOVING_DOWN*/  []func(){action_dummy, 		      action_dummy,			elev.action_halt_n_exec,action_dummy,       action_dummy},
-/*EMG_STOP   */  []func(){action_dummy, 		      action_dummy,			action_dummy,           action_dummy,       action_dummy},  
-/*OBST       */  []func(){action_dummy, 		      action_dummy,			action_dummy,           action_dummy,       action_dummy}, 
+	elevh.fsm_table = [][]func(){
+/*STATES:	  \	EVENTS:	//start_down			   //start_up              //exec_order			   //timeout			   //ready
+/*IDLE       */  []func(){elev.action_start_down,  elev.action_start_up,   elev.action_exec,       action_dummy,       elev.action_next},
+/*DOORS_OPEN */  []func(){elev.action_start_down,  elev.action_start_up,   elev.action_exec,       elev.action_done,   action_dummy},  
+/*MOVING_UP  */  []func(){action_dummy,            action_dummy,           elev.action_halt_n_exec,action_dummy,       action_dummy},
+/*MOVING_DOWN*/  []func(){action_dummy,            action_dummy,           elev.action_halt_n_exec,action_dummy,       action_dummy},
+/*EMG_STOP   */  []func(){action_dummy,            action_dummy,           action_dummy,           action_dummy,       action_dummy},  
+/*OBST       */  []func(){action_dummy,            action_dummy,           action_dummy,           action_dummy,       action_dummy}, 
 	}
 }
 
@@ -124,7 +124,6 @@ func (elev *Fsm_s)handle_new_order(){
 	       elev.fsm_update(start_down)
 	    case elevType.NONE:
 	       elev.state = IDLE
-	       fmt.Println("fsm: IDLE")
 	    default:
 	       fmt.Println("fsm: ERROR, undefined elev.lastDir in execute_next_order")
 	    }

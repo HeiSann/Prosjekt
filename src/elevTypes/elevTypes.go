@@ -31,10 +31,17 @@ type Net_s struct{
 }
 
 type Order_t struct{
-   direction   Direction_t   
    floor       int
+   direction   Direction_t   
    status      bool
 }
+
+type Light_t struct{
+   floor       int
+   direction   Direction_t   
+   status      bool
+}
+
 
    
    

@@ -21,12 +21,12 @@ type Elevator struct{
 
 func main(){
    var net = elevNet.init()
-   var coms = comsManager(net)
+   var coms = comsManager(net.ExternalChannels)
    var drivers = elevDrivers.init()
    var orders = elevOrders.init(driver)
    var fsm = elevCtrl.init(driver, orders)
    
-   var self = elevTypes.Elevator{net, coms, driver, orders, fsm}
+   var Elev = elevTypes.Elevator{net, coms, driver, orders, fsm}
        
 
    for{}
