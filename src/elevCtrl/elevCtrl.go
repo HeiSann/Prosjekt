@@ -12,7 +12,7 @@ type Coms_s struct{
    obsChan           chan bool
    
    motorChan         chan elevTypes.Direction_t
-   doorChan          chan bool
+   doorOpenChan      chan bool
    lightChan         chan elevTypes.Order_t
    floorIndChan      chan int 
    

@@ -28,59 +28,58 @@ const(
 )
 
 /* 	FSM Actions */
-func (elev *Fsm_s)action_start_down(){
-   elev.motorChan <- elevTypes.DOWM
-	elev.state = MOVING_DOWN
-	elev.lastDir = elevTypes.DOWN
+func (self *Fsm_s)action_start_down(){
+   self.Coms.motorChan <- elevTypes.DOWM
+	self.state = MOVING_DOWN
+	self.lastDir = elevTypes.DOWN
 	fmt.Println("fsm: MOVING_DOWN\n")
 }
 
-func (elev *Fsm_s)action_start_up(){
-	elev.motorChan <- elevTypes.UP
-	elev.state = MOVING_UP
-	elev.lastDir = elevTypes.UP
+func (self *Fsm_s)action_start_up(){
+	self.Coms.motorChan <- elevTypes.UP
+	self.state = MOVING_UP
+	self.lastDir = elevTypes.UP
 	fmt.Println("fsm: MOVING_UP\n")
 }
 
-func (elev *Fsm_s)action_exec(){
-	elevDrivers.OpenDoor()
-	elevDrivers.SetLight(elev.lastFloor, elev.lastDir)
+func (self *Fsm_s)action_exec(){
+	self.Coms.doorOpenChan <- true
+	elevDrivers.SetLight(elev.lastFloor, elev.lastDir)    //TODO: fix with channels
 	//start_timer()	
 	//order_executed()
-	elev.state = DOORS_OPEN 
+	self.state = DOORS_OPEN 
 	fmt.Println("fsm: DOORS_OPEN\n")
 }
 
-func (elev *Fsm_s)action_halt_n_exec(){
-	elev.motorChan <- elevTypes.NONE
-	elevDrivers.OpenDoor()
-	elevDrivers.SetLight(elev.lastFloor, elev.lastDir)
+func (self *Fsm_s)action_halt_n_exec(){
+	self.Coms.motorChan <- elevTypes.NONE
+	self.Coms.doorOpenChan <- true
+	elevDrivers.SetLight(elev.lastFloor, elev.lastDir)    //TODO: fix with channels
 	//start_timer()	
 	//order_executed()
-	elev.state = DOORS_OPEN 
+	self.state = DOORS_OPEN 
 	fmt.Println("fsm: DOORS_OPEN\n")
 }
 
-func (elev *Fsm_s)action_done(){
-	elevDrivers.CloseDoor()
+func (self *Fsm_s)action_done(){
+	self.Coms.doorOpenChan <- false
 	// stop_timer()
-	elev.lastDir = elev.get_nearest_order()
-	elev.state = IDLE
+	self.lastDir = elev.get_nearest_order()
+	self.state = IDLE
 	fmt.Println("fsm: IDLE\n")
-	elev.ready
+	self.ready()                                          //TODO: fix 
+
+func (self *Fsm_s)action_next(){
+    self.handle_new_order()
 }
 
-func (elev *Fsm_s)action_next(){
-    elev.handle_new_order()
+func (self *Fsm_s)action_stop(){
+	self.Coms.motorChan <- elevTypes.NONE
+	self.state = EMG
 }
 
-func (elev *Fsm_s)action_stop(){
-	elevDrivers.MotorStop(elev.motorChan)
-	elev.state = EMG
-}
-
-func (elev *Fsm_s)action_pause(){
-	elev.state = OBST
+func (self *Fsm_s)action_pause(){
+	self.state = OBST
 }
 
 func action_dummy(){
@@ -101,18 +100,18 @@ func (elev *Fsm_s)fsm_init(){
 }
 
 /* FSM help functions */
-func (elev *Fsm_s)fsm_update(event Event_t){
-	elev.fsm_table[elev.state][event]()
+func (self *Fsm_s)fsm_update(event Event_t){
+	self.fsm_table[elev.state][event]()
 }
 
-func (elev *Fsm_s)should_stop(floor int) bool{
-	//communicate with orders and check if current floor got pending orders in correct direction
+func (self *Fsm_s)should_stop(floor int) bool{     
+	//TODO: communicate with orders and check if current floor got pending orders in correct direction    
 	stop := true	
 	return stop
 }
 
-func (elev *Fsm_s)get_nearest_order() elevTypes.Direction_t{
-	//communicate with orders and get next direction
+func (self *Fsm_s)get_nearest_order() elevTypes.Direction_t{
+	//TODO: communicate with orders and get next direction
 	return elevTypes.UP
 }
 
