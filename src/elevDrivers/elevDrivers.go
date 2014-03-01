@@ -197,7 +197,7 @@ func listenSensors(sensorChan chan int){
 	}   
 }
 
-func InitElev(	) elevTypes.Drivers_s{
+func Init() elevTypes.Drivers_s{
 	
    buttonChan  := make(chan elevTypes.Button)
    sensorChan   := make(chan int)
