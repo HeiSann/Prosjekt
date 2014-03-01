@@ -13,19 +13,29 @@ const BUFF_SIZE = 1024
 
 func (elevNet *ElevNet_s)ManageTCPCom(){	
 	go elevNet.intComs.listenTcpCon()
+	fmt.Println("intcp")
 
 	tcpConnections:= make(map[string]net.Conn)
 	
 	for {	
 		select{
+		
 		case newTcpCon := <-elevNet.intComs.new_conn:
-			elevNet.ExtComs.registerNewCon(newTcpCon, tcpConnections)
+			fmt.Println("newconn")
+			elevNet.registerNewCon(newTcpCon, tcpConnections)
+			
 		case ip := <-elevNet.ExtComs.ConnectToElev:
-			elevNet.intComs.ConnectElev(ip)
+			fmt.Println("case connetct to")
+			go elevNet.intComs.ConnectElev(ip)
+			
 		case msg := <-elevNet.ExtComs.SendMsg:
+			fmt.Println("case send")
 			SendTcpMsg(msg, tcpConnections)
+			
+			
         case ip := <-elevNet.intComs.dead_elev:
-            deleteCon(ip, tcpConnections)
+        		fmt.Println("case dead")
+            elevNet.intComs.deleteCon(ip, tcpConnections)
 			
 		}//end select
 	}//end for
@@ -94,13 +104,14 @@ func (toManager *InternalChan_s)ConnectElev(ipAdr string){
 			}else{
 				fmt.Println("connection ok")
 				toManager.new_conn<-con
+				fmt.Println("sendt con on chan")
 				break
 			}
 		}//end BIG if/else		
 	}//end for
 }
 
-func (recv *ExternalChan_s)registerNewCon(con net.Conn, tcpConnections map[string]net.Conn){ //ta inn conn
+func (newCon ElevNet_s) registerNewCon(con net.Conn, tcpConnections map[string]net.Conn){ //ta inn conn
 	fmt.Println("handle new Con")
 	ip:= getConIp(con)
 
@@ -110,19 +121,21 @@ func (recv *ExternalChan_s)registerNewCon(con net.Conn, tcpConnections map[strin
 		fmt.Println(ok)
 		fmt.Println("connection not in map, adding connection")
 		tcpConnections[ip]=con
-		go recv.listenForTcpMsg(con)
+		go newCon.ExtComs.listenForTcpMsg(con)
+		newCon.intComs.newPinger<-ip
 	}else{
 		fmt.Println("connection already excist")
 	}
 }
 
-func deleteCon(ip string, tcpConnections map[string]net.Conn){
+func (toPing *InternalChan_s) deleteCon(ip string, tcpConnections map[string]net.Conn){
     _, ok :=tcpConnections[ip]
     if !ok{
         fmt.Println("connection already lost")
     }else{
         tcpConnections[ip].Close()
-        delete(tcpConnections,ip)   
+        delete(tcpConnections,ip)
+        toPing.deadPinger<-ip   
     }
 }
 

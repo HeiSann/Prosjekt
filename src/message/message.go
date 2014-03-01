@@ -36,7 +36,7 @@ func Bytestream2message(m []byte) Message{
 }
 
 func ConstructPing(ipTo string, ipFrom string)Message{
-    timestamp:=time.Now().Unix()
+    timestamp:=time.Now().UnixNano()
     stimestamp:=strconv.FormatInt(timestamp,10)
     return Message{ipTo, ipFrom, "PING", stimestamp}
 }

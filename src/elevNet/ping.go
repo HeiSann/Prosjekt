@@ -1,79 +1,85 @@
 package elevNet
 import( "time"
         "message"
-        "strconv"
+        "fmt"
 
        )
-const PING_TIMEOUT_NANO = 20000
-const SLEEP_TIME = 100
+const PING_TIMEOUT_MILLI = 30
+const SLEEP_TIME = 10
+const TEST_IP = "129.241.187.255"
+const MY_IP = "129.241.187.152"
 
 //new channels fix this, only for oversikt
-var timerOut chan bool
-var newip chan string
-var pingMsg chan message.Message
-var deadElev chan string
-var newPing chan string
 
 
 
-func refreshNetwork(){
-	elevPingTimes:=make(map[string]int64)
+func (elevNet *ElevNet_s) RefreshNetwork(){
+	elevPingTimes:=make(map[string]time.Time)
+	go elevNet.intComs.pingTimer()
     for{
         select{
         
-        case newip := <-newPing:
+        case newip := <-elevNet.intComs.newPinger:
             newPinger(elevPingTimes, newip)
+            fmt.Println("woho new elevator friend")
             
-        case msg := <-pingMsg:
+        case msg := <-elevNet.ExtComs.PingMsg:
 			updatePingTime(elevPingTimes,msg) 
-			                
-        case <-timerOut:
+			
+        case <-elevNet.intComs.timerOut:
 			performTimeControl(elevPingTimes)
 			
-        case deadIp := <-deadElev:
+			
+        case deadIp := <-elevNet.intComs.deadElev:
             deletePinger(elevPingTimes,deadIp)
             
         default:
             time.Sleep(time.Millisecond*SLEEP_TIME) //change. Needs to sleep less then a second
-            BroadCastPing()
+            elevNet.ExtComs.BroadCastPing()
+            
         }//end select
     }//end for
 }
 
-func newPinger(pingMap map[string]int64,ip string){
+func newPinger(pingMap map[string]time.Time,ip string){
 	_, inMap :=pingMap[ip]
+		
 	if !inMap{
-		pingMap[ip]=0.0
+		pingMap[ip]=time.Now()
+		fmt.Println("new pinger")
 	}
 }
 
-func updatePingTime(pingMap map[string]int64, msg message.Message){
+func updatePingTime(pingMap map[string]time.Time, msg message.Message){
+	
 	_, inMap := pingMap[msg.From]
 	if inMap{
-		newtime,_:=strconv.ParseInt(msg.Payload,10,64) //Converts the message payload fro sting to int64
-		pingMap[msg.From]=newtime
+		limitStamp:=time.Now().Add(20000000)
+		pingMap[msg.From]=limitStamp
 	}else{
 		//handle the situation when an elevator tries to ping and is not stored in the map(not a tcp connection)
 	}
 }
 
-func performTimeControl(pingMap map[string]int64){
-	timelimit:=time.Nanosecond.Nanoseconds()*PING_TIMEOUT_NANO //converts nanosecond(type duration) to int 64 nanosecond
-	currentTime :=time.Now().UnixNano() //returns current time in nanosecods
+func performTimeControl(pingMap map[string]time.Time){
 	
-	for ip,pingtime := range pingMap{
-		if pingtime>currentTime-timelimit{
-			checkIfAlive(ip)
+	currentTime :=time.Now()
+	for _,pingtime := range pingMap{
+		if currentTime.After(pingtime){
+			fmt.Println("oh no, my friend died")
+	    	
 	    }
     }
 }
 
-func deletePinger(pingMap map[string]int64, ip string){
+func deletePinger(pingMap map[string]time.Time, ip string){
 	delete(pingMap,ip)
 }
 
-func BroadCastPing(){
-	//construct Ping msg and broadcast
+func (toNet *ExternalChan_s) BroadCastPing(){
+	msg:=message.ConstructPing(TEST_IP,MY_IP)
+	toNet.SendBcast<-msg
+		//construct Ping msg and broadcast
 	//Bcast<-pingmsg
 }
 
@@ -82,10 +88,10 @@ func checkIfAlive(ipadr string){
     //send msg to refresh network and updateTcpCon map(on the same channel?) so that the connection is deleted and pingmap removed
 }
 
-func pingTimer(timeOut chan bool){
+func (ToRefresh *InternalChan_s) pingTimer(){
     for{
-        time.Sleep(time.Nanosecond*PING_TIMEOUT_NANO)
-        timeOut<-true
+        time.Sleep(time.Millisecond*PING_TIMEOUT_MILLI)
+        ToRefresh.timerOut<-true
     }
 }
 

@@ -14,6 +14,7 @@ type ExternalChan_s struct{
 	SendMsg chan message.Message  
 	SendBcast chan message.Message
 	ConnectToElev chan string
+	PingMsg chan message.Message
 }
     
 type InternalChan_s struct{
@@ -21,40 +22,51 @@ type InternalChan_s struct{
 	dead_elev chan string
 	new_conn chan net.Conn
 	send_msg chan message.Message
+	timerOut chan bool
+	newPinger chan string	
+	deadElev chan string
+	deadPinger chan string
 }
 
 type ElevNet_s struct{
+	ip string
 	ExtComs ExternalChan_s
 	intComs InternalChan_s
+	
 }
 	
 
 
 func Init()ElevNet_s{
-
 	elevNet:=ElevNet_s{}
-	elevNet.ExtComs=externalChannelsInit()
-	elevNet.intComs=internalChannelsInit()	
+	elevNet.ip=GetMyIP()
+	elevNet.ExtComs=ExternalChannelsInit()
+	elevNet.intComs=InternalChannelsInit()	
 	
 	return elevNet
 }
 
-func externalChannelsInit()ExternalChan_s{
+func ExternalChannelsInit()ExternalChan_s{
 	extChans:=ExternalChan_s{}
-	extChans.RecvMsg = make(chan message.Message,255)
-	extChans.SendMsg = make(chan message.Message,255)
-	extChans.SendBcast = make(chan message.Message,255)
-	extChans.ConnectToElev = make(chan string,255)
+	extChans.RecvMsg = make(chan message.Message)
+	extChans.SendMsg = make(chan message.Message)
+	extChans.SendBcast = make(chan message.Message)
+	extChans.ConnectToElev = make(chan string)
+	extChans.PingMsg = make(chan message.Message)
 	return extChans
 }
 
 
-func internalChannelsInit()InternalChan_s{
+func InternalChannelsInit()InternalChan_s{
 	internalChan:=InternalChan_s{}
-	internalChan.connect_to = make(chan bool, 255)
-	internalChan.dead_elev = make(chan string, 255)
-	internalChan.new_conn = make(chan net.Conn, 255)
+	internalChan.connect_to = make(chan bool)
+	internalChan.dead_elev = make(chan string)
+	internalChan.new_conn = make(chan net.Conn)
 	internalChan.send_msg = make(chan message.Message)
+	internalChan.timerOut = make(chan bool)
+	internalChan.newPinger = make(chan string)
+	internalChan.deadElev = make(chan string)
+	internalChan.deadPinger = make(chan string)
 	return internalChan
 }
 

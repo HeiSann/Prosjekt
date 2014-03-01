@@ -3,8 +3,6 @@ package elevNet
 import (
 	"net"	
 	"message"
-
-	
 )
 
 const UDP_PORT ="20000"//All Elevs listen to this Broadcast Port

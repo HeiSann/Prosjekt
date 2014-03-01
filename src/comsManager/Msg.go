@@ -7,27 +7,29 @@ import "message"
 
 
 
-func DeliverMsg(networkChan elevNet.ElevNetChannels){
+func DeliverMsg(fromNet elevNet.ExternalChan_s){
     for{
-        msg:=<-networkChan.RecvMsg
+        msg:=<-fromNet.RecvMsg
     
         switch msg.Msg_type{
         case "connectTo":
             fmt.Println("The msg is of type udp")
-			networkChan.ConnectToElev<-msg.From
-		case "test":
-			fmt.Println("tcp msg recieved")
+				fromNet.ConnectToElev<-msg.From
+		  case "test":
+				fmt.Println("tcp msg recieved")
+		  case "PING":
+		  		fromNet.PingMsg<-msg
         default:
             fmt.Println("not able to read msg header")
         }
     }
 }
 
-func SendMsg(msg message.Message,sendChan elevNet.ElevNetChannels){ //TTEST
+func MsgSend(msg message.Message, toNet elevNet.ExternalChan_s){ //TTEST
 	for{
 		select{
 		case <-NetChan.SendUDP:
-			sendChan.SendBcast<-msg
+			toNet.SendBcast<-msg
 		}
 	}
 }
