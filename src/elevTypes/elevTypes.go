@@ -25,21 +25,20 @@ type Drivers_s struct{
 	ObsChan chan bool
 }
 
-
 type Net_s struct{
    Dummy int
 }
 
 type Order_t struct{
-   floor       int
-   direction   Direction_t   
-   status      bool
+   Floor       int
+   Direction   Direction_t   
+   Status      bool
 }
 
 type Light_t struct{
-   floor       int
-   direction   Direction_t   
-   status      bool
+   Floor       int
+   Direction   Direction_t   
+   Set      	bool
 }
 
 

@@ -6,14 +6,14 @@ import (
 )
 
 type Coms_s struct{
-   buttonChan        chan int elevTypes.Button
+   buttonChan        chan elevTypes.Button
    floorChan         chan int
    stopButtonChan    chan bool
    obsChan           chan bool
    
    motorChan         chan elevTypes.Direction_t
    doorOpenChan      chan bool
-   setLightChan      chan elevTypes.Order_t
+   setLightChan      chan elevTypes.Light_t
    floorIndChan      chan int 
    
    orderExdChan     chan elevTypes.Order_t  //fsm -> orders
@@ -26,6 +26,7 @@ type Fsm_s struct{
 	state 		   State_t
 	lastDir 	      elevTypes.Direction_t
 	lastFloor      int 
+	eventChan		chan Event_t
 	startTimerChan chan bool
 	timeoutChan    chan bool
 	readyChan      chan bool
@@ -42,11 +43,8 @@ func Init(
 
 
    fmt.Println("elevCtrl.init()...")
-   
-   //use function for this
-   var table [][]func()
 	
 	fmt.Println("OK")
    
-   return Fsm_s{table, IDLE, elevTypes.NONE, 1}
+   return Fsm_s{}
 }
