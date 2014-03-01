@@ -16,17 +16,10 @@ type Button struct{
 	Dir Direction_t          
 }
 
-
-type Drivers_s struct{
-   ButtonChan chan Button
-	SensorChan chan int
-	MotorChan chan Direction_t
-	StopButtonChan chan bool
-	ObsChan chan bool
-}
-
-type Net_s struct{
-   Dummy int
+type Light_t struct{
+   Floor       int
+   Direction   Direction_t   
+   Set      	bool
 }
 
 type Order_t struct{
@@ -35,10 +28,36 @@ type Order_t struct{
    Status      bool
 }
 
-type Light_t struct{
-   Floor       int
-   Direction   Direction_t   
-   Set      	bool
+type Drivers_ExtComs_s struct{
+   ButtonChan chan Button
+	SensorChan chan int
+	MotorChan chan Direction_t
+	StopButtonChan chan bool
+	ObsChan chan bool
+}
+
+type Net_ExtComs_s struct{
+   Dummy int
+}
+
+type Orders_ExtComs_s struct{
+   Dummy int
+}
+
+type Fsm_ExtComs_s struct{
+   ButtonChan        chan Button
+   FloorChan         chan int
+   StopButtonChan    chan bool
+   ObsChan           chan bool
+   
+   MotorChan         chan Direction_t
+   DoorOpenChan      chan bool
+   SetLightChan      chan Light_t
+   FloorIndChan      chan int 
+   
+   OrderExdChan     chan Order_t  //fsm -> orders
+   NewOrdersChan    chan Order_t  //orders -> orders
+   EmgTriggerChan   chan bool               //orders -> fsm
 }
 
 
