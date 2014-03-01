@@ -57,7 +57,7 @@ type Fsm_ExtComs_s struct{
    
    OrderExdChan     chan Order_t  //fsm -> orders
    NewOrdersChan    chan Order_t  //orders -> orders
-   EmgTriggerChan   chan bool               //orders -> fsm
+   EmgTriggerChan   chan bool     //orders -> fsm
 }
 
 
