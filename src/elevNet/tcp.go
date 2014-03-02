@@ -3,7 +3,7 @@ import(
 	"net"
 	"fmt"	
 	"strings"	
-	"message"
+	"elevTypes"
 )
 
 const CON_ATMPTS = 10
@@ -24,18 +24,16 @@ func (elevNet *ElevNet_s)ManageTCPCom(){
 			fmt.Println("newconn")
 			elevNet.registerNewCon(newTcpCon, tcpConnections)
 			
-		case ip := <-elevNet.ExtComs.ConnectToElev:
+		case ip := <-elevNet.intComs.connectToElev:
 			fmt.Println("case connetct to")
 			go elevNet.intComs.ConnectElev(ip)
 			
 		case msg := <-elevNet.ExtComs.SendMsg:
 			fmt.Println("case send")
 			SendTcpMsg(msg, tcpConnections)
-			
-			
-        case ip := <-elevNet.intComs.dead_elev:
+		case ip := <-elevNet.intComs.deadElev:
         		fmt.Println("case dead")
-            elevNet.intComs.deleteCon(ip, tcpConnections)
+            deleteCon(ip, tcpConnections)
 			
 		}//end select
 	}//end for
@@ -48,7 +46,7 @@ func (toComsMan *ExternalChan_s) listenForTcpMsg (con net.Conn){
 	    if err!=nil {
 			//fmt.Println("error in listen")			
 		}else{
-			msg:=message.Bytestream2message(bstream)
+			msg:=bytestream2message(bstream)
 			toComsMan.RecvMsg<-msg
 			
 		}
@@ -71,9 +69,9 @@ func (toManager *InternalChan_s)listenTcpCon(){
    	}
 }	
 
-func SendTcpMsg(msg message.Message, tcpConnections map[string]net.Conn){
+func SendTcpMsg(msg elevTypes.Message, tcpConnections map[string]net.Conn){
 	ipAddr := msg.To
-	bstream:=message.Message2bytestream(msg)
+	bstream:=message2bytestream(msg)
 	con, ok :=tcpConnections[ipAddr]
 	switch ok{
 	case true:
@@ -122,20 +120,21 @@ func (elevnet ElevNet_s) registerNewCon(con net.Conn, tcpConnections map[string]
 		fmt.Println("connection not in map, adding connection")
 		tcpConnections[ip]=con
 		go elevnet.ExtComs.listenForTcpMsg(con)
+		fmt.Println("started to listen")
 		elevnet.intComs.newPinger<-ip
+		fmt.Println("send new pinger")
 	}else{
 		fmt.Println("connection already excist")
 	}
 }
 
-func (toPing *InternalChan_s) deleteCon(ip string, tcpConnections map[string]net.Conn){
+func deleteCon(ip string, tcpConnections map[string]net.Conn){
     _, ok :=tcpConnections[ip]
     if !ok{
         fmt.Println("connection already lost")
     }else{
         tcpConnections[ip].Close()
-        delete(tcpConnections,ip)
-        toPing.deadPinger<-ip   
+        delete(tcpConnections,ip)  
     }
 }
 

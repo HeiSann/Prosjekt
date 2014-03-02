@@ -48,9 +48,6 @@ type Drivers_ExtComs_s struct{
 	DoorOpenChan      chan<- bool
 }
 
-type Orders_ExtComs_s struct{
-	
-}
 
 type Fsm_ExtComs_s struct{
 	/* Channels initialized in fsm */   
@@ -70,7 +67,13 @@ type Fsm_ExtComs_s struct{
 }
 
 
-   
+type Message struct{
+	To string
+	From string //ipAdr
+	Msg_type string //order, deadElev, auction, connect to me
+	Payload string
+}
+
    
 
 
