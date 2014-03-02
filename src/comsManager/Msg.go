@@ -1,8 +1,9 @@
 package comsManager
 
-import "elevNet"
-import "fmt"
-import "message"
+import ("elevNet"
+			"fmt"
+			"elevTypes"
+		  )
 
 
 
@@ -12,9 +13,6 @@ func DeliverMsg(fromNet elevNet.ExternalChan_s){
         msg:=<-fromNet.RecvMsg
     
         switch msg.Msg_type{
-        case "connectTo":
-            fmt.Println("The msg is of type udp")
-				fromNet.ConnectToElev<-msg.From
 		  case "test":
 				fmt.Println("tcp msg recieved")
 		  case "PING":
@@ -25,11 +23,9 @@ func DeliverMsg(fromNet elevNet.ExternalChan_s){
     }
 }
 
-func MsgSend(msg message.Message, toNet elevNet.ExternalChan_s){ //TTEST
+func MsgSend(msg elevTypes.Message, toNet elevNet.ExternalChan_s){ //TTEST
 	for{
 		select{
-		case <-NetChan.SendUDP:
-			toNet.SendBcast<-msg
 		}
 	}
 }

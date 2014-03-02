@@ -4,7 +4,6 @@ import ("runtime"
 		  "comsManager"
 		  "elevNet"	
 		  "fmt"
-		  	"message"
 		  	"time"
 		  )
 		  
@@ -32,14 +31,7 @@ func main(){
 	//go comsManager.SendMsg(msg, elevNet.ElevNetChan)
 	//go coms.SendPckgToAll(coms.ComsChan)
 	
-	msg:=message.ConstructMessage("129.241.187.255","129.241.187.152","connectTo", "test")
-	for i:=0;i<1;i++{
-		fmt.Println("yo")
-		time.Sleep(time.Second)
-		net_s.ExtComs.SendBcast<-msg
-		
-	}
-
+	
 	<-c
 	
 

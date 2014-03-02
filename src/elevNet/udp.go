@@ -2,7 +2,6 @@ package elevNet
 
 import (
 	"net"	
-	"message"
 )
 
 const UDP_PORT ="20000"//All Elevs listen to this Broadcast Port
@@ -18,7 +17,7 @@ func (fromComs *ExternalChan_s) SendMsgToAll(){
 	
 	for {
 		msg:=<-fromComs.SendBcast
-		bstream:=message.Message2bytestream(msg)
+		bstream:=message2bytestream(msg)
 		con.Write(bstream)
 	}		
 }
@@ -41,7 +40,7 @@ func (toComs *ExternalChan_s)ListenToBroadcast() {
     		if err != nil { return }
 		
     		if remoteAddr.IP.String() != myIp {
-					msg:=message.Bytestream2message(buf)
+					msg:=bytestream2message(buf)
     	    		toComs.RecvMsg<-msg
     		}       
       }	

@@ -1,6 +1,8 @@
 package elevNet
-import("net")
-import("message")
+import("net"
+		"elevTypes"
+		"strings"
+		)
 
 
 const TARGET_PORT = "20011"
@@ -10,49 +12,43 @@ const LISTEN_PORT = "30011"
 
 
 type ExternalChan_s struct{
-	RecvMsg chan message.Message
-	SendMsg chan message.Message  
-	SendBcast chan message.Message
-	ConnectToElev chan string
-	PingMsg chan message.Message
+	RecvMsg chan elevTypes.Message
+	SendMsg chan elevTypes.Message  
+	SendBcast chan elevTypes.Message
+	PingMsg chan elevTypes.Message
 }
     
 type InternalChan_s struct{
 	connect_to chan bool
-	dead_elev chan string
 	new_conn chan net.Conn
-	send_msg chan message.Message
+	send_msg chan elevTypes.Message
 	timerOut chan bool
 	newPinger chan string	
 	deadElev chan string
 	deadPinger chan string
+	connectToElev chan string
 }
 
 type ElevNet_s struct{
 	ip string
 	ExtComs ExternalChan_s
 	intComs InternalChan_s
-	
 }
-	
-
 
 func Init()ElevNet_s{
 	elevNet:=ElevNet_s{}
 	elevNet.ip=GetMyIP()
 	elevNet.ExtComs=ExternalChannelsInit()
 	elevNet.intComs=InternalChannelsInit()	
-	
 	return elevNet
 }
 
 func ExternalChannelsInit()ExternalChan_s{
 	extChans:=ExternalChan_s{}
-	extChans.RecvMsg = make(chan message.Message)
-	extChans.SendMsg = make(chan message.Message)
-	extChans.SendBcast = make(chan message.Message)
-	extChans.ConnectToElev = make(chan string)
-	extChans.PingMsg = make(chan message.Message)
+	extChans.RecvMsg = make(chan elevTypes.Message)
+	extChans.SendMsg = make(chan elevTypes.Message)
+	extChans.SendBcast = make(chan elevTypes.Message)
+	extChans.PingMsg = make(chan elevTypes.Message)
 	return extChans
 }
 
@@ -60,15 +56,27 @@ func ExternalChannelsInit()ExternalChan_s{
 func InternalChannelsInit()InternalChan_s{
 	internalChan:=InternalChan_s{}
 	internalChan.connect_to = make(chan bool)
-	internalChan.dead_elev = make(chan string)
 	internalChan.new_conn = make(chan net.Conn)
-	internalChan.send_msg = make(chan message.Message)
+	internalChan.send_msg = make(chan elevTypes.Message)
 	internalChan.timerOut = make(chan bool)
 	internalChan.newPinger = make(chan string)
 	internalChan.deadElev = make(chan string)
 	internalChan.deadPinger = make(chan string)
+	internalChan.connectToElev =make(chan string)
 	return internalChan
 }
 
 
+//not generic, could use reflect...
+func message2bytestream (m elevTypes.Message) []byte{
+	msg := m.To +"~"+m.From +"~"+ m.Msg_type +"~"+ m.Payload
+	return []byte(msg+"\x00")
+}
 
+//not generic, could use reflect..
+func bytestream2message(m []byte) elevTypes.Message{
+	msg_string := string(m[:])
+	msg_array := strings.Split(msg_string, "~")
+	msg := elevTypes.Message{msg_array[0], msg_array[1], msg_array[2], msg_array[3]}
+	return msg
+}
