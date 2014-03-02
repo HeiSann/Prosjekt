@@ -1,4 +1,4 @@
-package elevCtrl
+package elevFSM
 
 import (
 	"fmt"
@@ -48,32 +48,16 @@ type Fsm_s struct{
 func Init(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s)Fsm_s{
    fmt.Println("elevCtrl.init()...")
 
-	/* Make internal channels	*/
-	
-
-	/* Make external channel*/
-	Ord_executed:= make(chan Order_t)  //fsm -> orders	
-	
-	ExternalComs:= elevTypes.Fsm_ExtComs_s{
-		driver.ButtonChan
-		driver.SensorChan
-		driver.StopButtonChan
-		driver.
-		driver.MotorChan
-		driver.	
-	}
-
 	/* Make FSM	*/
-	self := Fsm_s{}
-	self.int_fsm_table()
-	self.intComs = internalComs
-	self.ExtComs = externalComs
+	fsm := Fsm_s{}
+	fsm.init_fsm_table()
+	fsm.init_intComs()
+	fsm.init_ExtComs()
 
-	self.go_to_defined_state()
-		
-	fmt.Println("OK")
-   
-   return fsm
+	fsm.start()
+	
+	fmt.Println("fsm.Init: OK!")
+	return fsm
 }
 
 /* 	FSM Actions */
@@ -149,23 +133,41 @@ func (elev *Fsm_s)init_fsm_table(){
 }
 
 func(self *Fsm_s)init_intComs(){
-	self.eventChan 		= make(chan Event_t)
-	self.startTimerChan 	= make(chan bool)
-	self.timeoutChan		= make(chan bool)
-	self.readyChan  		= make(chan bool)
+	self.intComs.eventChan 			= make(chan Event_t)
+	self.intComs.startTimerChan 	= make(chan bool)
+	self.intComs.timeoutChan		= make(chan bool)
+	self.intComs.readyChan  		= make(chan bool)
 }
 
 func(self *Fsm_s)init_ExtComs(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s){
-	self.OrderExdChan = make(chan Order_t)  //fsm -> orders	
-
+	self.OrderExdChan 	= make(chan Order_t)  //fsm -> orders	
 	self.ButtonChan 		= driver.ButtonChan
 	self.FloorChan 		= driver.SensorChan
 	self.StopButtonChan	= driver.StopButtonChan
 	self.ObsChan			= driver.ObsChan	
 	self.MotorChan			= driver.MotorChan
-	self.SetLightChan
-	self.FloorIndChan
-	}
+	self.DoorOpenChan		= driver.DoorOpenChan
+	self.SetLightChan		= driver.SetLightChan
+	self.FloorIndChan		= driver.SetFloorIndChan
+	self.NewOrdersChan	= orders.OrderUpdatedChan
+	self.EmgTriggerChan	= orders.EMG2Fsm
+}
+
+func (self *Fsm_s)start(){
+	if not_at_floor
+		self.ExtComs.MotorChan <- elevTypes.DOWN
+	for not_at_floor{
+		//wait until floor reached
+	}	
+	//stop motor
+	self.ExtComs.MotorChan <- elevTypes.NONE
+	//update fsm vars
+	self.state = IDLE
+	self.lastfloor = cur_floor
+	self.lastDir = NONE
+	//start the fsm routunes
+	go fsm_update()
+	go fsm.generate_events()
 }
 
 /* FSM help functions */
@@ -188,13 +190,13 @@ func (self *Fsm_s)get_nearest_order() elevTypes.Direction_t{
 	return elevTypes.UP
 }
 
-func (elev *Fsm_s)handle_next_order(){
-    if elev.state == IDLE{
-	    switch(elev.get_nearest_order()){
+func (fsm *Fsm_s)handle_next_order(){
+    if fsm.state == IDLE{
+	    switch(fsm.get_nearest_order()){
 	    case elevTypes.UP:
-	       elev.intComs.eventChan <- START_UP
+	       fsm.intComs.eventChan <- START_UP
 	    case elevTypes.DOWN:
-			 elev.intComs.eventChan <- START_DOWN
+			 fsm.intComs.eventChan <- START_DOWN
 	    case elevTypes.NONE:
 	       // no new orders: do nothing
 	    default:
@@ -205,15 +207,15 @@ func (elev *Fsm_s)handle_next_order(){
    }
 }
 
-func (elev *Fsm_s)handle_new_order(){
-    if elev.state == IDLE{
-	    switch(elev.get_nearest_order()){
+func (fsm *Fsm_s)handle_new_order(){
+    if self.state == IDLE{
+	    switch(fsm.get_nearest_order()){
 	    case elevTypes.UP:
-	       elev.intComs.eventChan <- START_UP
+	       fsm.intComs.eventChan <- START_UP
 	    case elevTypes.DOWN:
-			 elev.intComs.eventChan <- START_DOWN
+			 fsm.intComs.eventChan <- START_DOWN
 	    case elevTypes.NONE:
-	       elev.intComs.eventChan <- EXEC_ORDER
+	       fsm.intComs.eventChan <- EXEC_ORDER
 	    default:
 	       fmt.Println("fsm: ERROR, undefined elev.lastDir in execute_next_order")
 	    }
@@ -222,27 +224,27 @@ func (elev *Fsm_s)handle_new_order(){
    }
 }
 
-func (elev *Fsm_s)fsm_generate_events(){
+func (fsm *Fsm_s)generate_events(){
 	for{
 	   select{
-	   case <- elev.ExtComs.StopButtonChan:
-			elev.intComs.eventChan <- EMG
-	   case <- elev.ExtComs.ObsChan:
-			elev.intComs.eventChan <- OBSTRUCTION
-	   case floor:=<- elev.ExtComs.FloorChan:
+	   case <- fsm.ExtComs.StopButtonChan:
+			fsm.intComs.eventChan <- EMG
+	   case <- fsm.ExtComs.ObsChan:
+			fsm.intComs.eventChan <- OBSTRUCTION
+	   case floor:=<- self.ExtComs.FloorChan:
 		   if floor != -1{
-			   elev.lastFloor = floor
+			   fsm.lastFloor = floor
 			   //set floor_light
-			   if elev.should_stop(floor){
-					elev.intComs.eventChan <- EXEC_ORDER
+			   if self.should_stop(floor){
+					self.intComs.eventChan <- EXEC_ORDER
 			   }
 		   }
-	   case <- elev.ExtComs.NewOrdersChan:
-		   elev.handle_new_order()
-      case <-elev.intComs.timeoutChan:
-			 elev.intComs.eventChan <- TIMEOUT				
-	   case <-elev.intComs.readyChan:
-			 elev.intComs.eventChan <- READY
+	   case <- fsm.ExtComs.NewOrdersChan:
+		   fsm.handle_new_order()
+      case <-fsm.intComs.timeoutChan:
+			 fsm.intComs.eventChan <- TIMEOUT				
+	   case <-fsm.intComs.readyChan:
+			 fsm.intComs.eventChan <- READY
 	   }
 	}
 }

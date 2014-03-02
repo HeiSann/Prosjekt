@@ -8,7 +8,7 @@ import(
    "comsManager"
    "elevDrivers"
    "elevOrders"
-   "elevCtrl"
+   "elevFSM"
 )
 
 type Elevator struct{
@@ -21,14 +21,13 @@ type Elevator struct{
 
 func main(){
    var net = elevNet.init()
-   var coms = comsManager(net.ExternalChannels)
+   var coms = comsManager(net.ExtChan)
    var drivers = elevDrivers.init()
-   var orders = elevOrders.init(driver)
-   var fsm = elevCtrl.init(driver, orders)
+   var orders = elevOrders.init(drivers.ExtChan, coms.ExtChan)
+   var fsm = elevFSM.init(drivers.ExtComs, orders.ExtComs)
    
    var Elev = elevTypes.Elevator{net, coms, driver, orders, fsm}
        
-
    for{}
     
 }

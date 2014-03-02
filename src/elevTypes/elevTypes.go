@@ -28,14 +28,6 @@ type Order_t struct{
    Status      bool
 }
 
-type Drivers_ExtComs_s struct{
-   ButtonChan chan Button
-	SensorChan chan int
-	MotorChan chan Direction_t
-	StopButtonChan chan bool
-	ObsChan chan bool
-}
-
 type Net_ExtComs_s struct{
    Dummy int
 }
@@ -44,20 +36,37 @@ type Orders_ExtComs_s struct{
    Dummy int
 }
 
+type Drivers_ExtComs_s struct{
+	/* Channels initialized in driver */
+   ButtonChan 			<-chan Button
+	SensorChan 			<-chan int
+	StopButtonChan 	<-chan bool
+	ObsChan 				<-chan bool
+	MotorChan 			chan<- Direction_t
+	SetLightChan 		chan<- int
+	SetFloorIndChan 	chan<- int
+	DoorOpenChan      chan<- bool
+}
+
+type Orders_ExtComs_s struct{
+	
+}
+
 type Fsm_ExtComs_s struct{
-   ButtonChan        chan Button
-   FloorChan         chan int
-   StopButtonChan    chan bool
-   ObsChan           chan bool
-   
-   MotorChan         chan Direction_t
-   DoorOpenChan      chan bool
-   SetLightChan      chan Light_t
-   FloorIndChan      chan int 
-   
-   OrderExdChan     chan Order_t  //fsm -> orders
-   NewOrdersChan    chan Order_t  //orders -> orders
-   EmgTriggerChan   chan bool     //orders -> fsm
+	/* Channels initialized in fsm */   
+   OrderExdChan     	chan Order_t  //fsm -> orders
+	/* Channels from driver */
+   ButtonChan        <-chan Button
+   FloorChan         <-chan int
+   StopButtonChan    <-chan bool
+   ObsChan           <-chan bool
+   MotorChan         chan<- Direction_t
+   DoorOpenChan      chan<- bool
+   SetLightChan      chan<- Light_t
+   SetFloorIndChan   chan<- int 
+	/* Channels from orders*/
+   NewOrdersChan    <-chan Order_t  //orders -> fsm
+   EmgTriggerChan   <-chan bool     //orders -> fsm
 }
 
 
