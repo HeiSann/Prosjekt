@@ -50,8 +50,6 @@ type Drivers_ExtComs_s struct{
 
 
 type Fsm_ExtComs_s struct{
-	/* Channels initialized in fsm */   
-   OrderExdChan     	chan Order_t  //fsm -> orders
 	/* Channels from driver */
    ButtonChan        <-chan Button
    FloorChan         <-chan int
@@ -62,8 +60,10 @@ type Fsm_ExtComs_s struct{
    SetLightChan      chan<- Light_t
    SetFloorIndChan   chan<- int 
 	/* Channels from orders*/
-   NewOrdersChan    <-chan Order_t  //orders -> fsm
-   EmgTriggerChan   <-chan bool     //orders -> fsm
+	NewOrdersChan    	<-chan Order_t  
+	OrderExecdChan  	chan<- Order_t	
+	StopRequestChan  	<-chan Order_t		
+   EmgTriggerdChan  	<-chan bool     	
 }
 
 
