@@ -111,7 +111,7 @@ func (toManager *InternalChan_s)ConnectElev(ipAdr string){
 	}//end for
 }
 
-func (newCon ElevNet_s) registerNewCon(con net.Conn, tcpConnections map[string]net.Conn){ //ta inn conn
+func (elevnet ElevNet_s) registerNewCon(con net.Conn, tcpConnections map[string]net.Conn){ //ta inn conn
 	fmt.Println("handle new Con")
 	ip:= getConIp(con)
 
@@ -121,8 +121,8 @@ func (newCon ElevNet_s) registerNewCon(con net.Conn, tcpConnections map[string]n
 		fmt.Println(ok)
 		fmt.Println("connection not in map, adding connection")
 		tcpConnections[ip]=con
-		go newCon.ExtComs.listenForTcpMsg(con)
-		newCon.intComs.newPinger<-ip
+		go elevnet.ExtComs.listenForTcpMsg(con)
+		elevnet.intComs.newPinger<-ip
 	}else{
 		fmt.Println("connection already excist")
 	}

@@ -4,7 +4,7 @@ import( "time"
         "fmt"
 
        )
-const PING_TIMEOUT_MILLI = 30
+const PING_TIMEOUT_MILLI = 50
 const SLEEP_TIME = 10
 const TEST_IP = "129.241.187.255"
 const MY_IP = "129.241.187.152"
@@ -79,7 +79,7 @@ func deletePinger(pingMap map[string]time.Time, ip string){
 func (toNet *ExternalChan_s) BroadCastPing(){
 	msg:=message.ConstructPing(TEST_IP,MY_IP)
 	toNet.SendBcast<-msg
-		//construct Ping msg and broadcast
+		//construct Ping msg and broadcast denne må gjennom coms manager
 	//Bcast<-pingmsg
 }
 
