@@ -48,7 +48,6 @@ type Fsm_s struct{
 func Init(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s)Fsm_s{
    fmt.Println("elevCtrl.init()...")
 
-	/* Make FSM	*/
 	fsm := Fsm_s{}
 	fsm.init_fsm_table()
 	fsm.init_intComs()
@@ -60,7 +59,7 @@ func Init(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s)
 	return fsm
 }
 
-/* 	FSM Actions */
+/* Finite State Machine Actions */
 func (self *Fsm_s)action_start_down(){
    self.ExtComs.MotorChan <- elevTypes.DOWN
 	self.state = MOVING_DOWN
@@ -129,6 +128,18 @@ func (elev *Fsm_s)init_fsm_table(){
 /*MOVING_DOWN*/  []func(){action_dummy,            action_dummy,           elev.action_halt_n_exec,action_dummy,       action_dummy},
 /*EMG_STOP   */  []func(){action_dummy,            action_dummy,           action_dummy,           action_dummy,       action_dummy},  
 /*OBST       */  []func(){action_dummy,            action_dummy,           action_dummy,           action_dummy,       action_dummy}, 
+	}
+}
+
+func (fsm *Fsm_s)init_fsm_table2(){
+	fsm.table = [][]func(){
+/*STATES:	  \	EVENTS:	//NewOrder			//FloorReached        	//Exec  				//TimerOut			//Obst			//EmgPressed
+/*IDLE       */  []func(){fsm.action_start,	action_dummy,				fsm.action_exec,  action_dummy,		action_dummy,	action_dummy},
+/*DOORS_OPEN */  []func(){action_dummy,		action_dummy,   			action_dummy,  	fsm.action_done,	action_dummy,  action_dummy},  
+/*MOVING_UP  */  []func(){action_dummy,		fsm.action_check_order, fsm.action_exec,	action_dummy,		action_dummy,  action_dummy},
+/*MOVING_DOWN*/  []func(){action_dummy,		fsm.action_check_order, fsm.action_exec,	action_dummy,		action_dummy,  action_dummy},
+/*EMG_STOP   */  []func(){action_dummy,		action_dummy,           action_dummy,     action_dummy,		action_dummy,  action_dummy},  
+/*OBST       */  []func(){action_dummy,		action_dummy,           action_dummy,     action_dummy,		action_dummy,  action_dummy}, 
 	}
 }
 
@@ -232,7 +243,7 @@ func (fsm *Fsm_s)generate_events(){
 	   case <- fsm.ExtComs.ObsChan:
 			fsm.intComs.eventChan <- OBSTRUCTION
 	   case floor:=<- self.ExtComs.FloorChan:
-		   if floor != -1{
+		   if floor != -1 && floor != fsm.lastFloor{
 			   fsm.lastFloor = floor
 			   //set floor_light
 			   if self.should_stop(floor){
