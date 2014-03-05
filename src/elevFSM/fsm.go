@@ -31,7 +31,6 @@ type intComs_s struct{
    eventChan		chan Event_t
 	startTimerChan	chan bool
 	timeoutChan		chan bool
-	orderChan		chan elevTypes.Order_t
 	newOrderChan 	chan elevTypes.Order_t
 }
 
@@ -71,14 +70,18 @@ func (self *Fsm_s)action_check_order(){
 	
 	//send_stop_request order
 	current := elevTypes.Order_t{floor, self.lastDir, true}
-	self.ExtComs.StopRequestChan <- current
+	self.ExtComs.ExecRequestChan <- current
+	/*
+	resp :<- self.ExtComs.ExecResponseChan
+	if resp
+		self.intComs.eventChan <- EXEC
+	*/
 }
 
 func (self *Fsm_s)action_exec_same(){
 	self.ExtComs.DoorOpenChan <- true
 	self.ExtComs.SetLightChan <- elevTypes.Light_t{self.lastFloor, self.lastDir, false}
 	self.intComs.startTimerChan <- true
-	self.ExtComs.OrderExecdChan <- elevTypes.Order_t{self.lastFloor, self.lastDir, false}
 	self.state = DOORS_OPEN 
 	fmt.Println("fsm: DOORS_OPEN\n")
 }
@@ -86,8 +89,10 @@ func (self *Fsm_s)action_exec_same(){
 func (self *Fsm_s)action_exec(){
 	self.ExtComs.MotorChan <- elevTypes.NONE
 	self.ExtComs.DoorOpenChan <- true
-	self.ExtComs.SetLightChan <- elevTypes.Light_t{self.lastFloor, self.lastDir, false}
+	self.ExtComs.SetLightChan <- elevTypes.Light_t{self.lastFloor, self.lastDir, false}	//turn buttonLight off
+	//TODO: open door
 	self.intComs.startTimerChan <- true	
+	self.ExtComs.ExecdOrderChan <- elevTypes.Order_t{self.lastFloor, self.lastDir, false}
 	self.state = DOORS_OPEN 
 	fmt.Println("fsm: DOORS_OPEN\n")
 }
@@ -108,11 +113,6 @@ func (self *Fsm_s)action_pause(){
 	self.state = OBSTRUCTED
 }
 
-func (self *Fsm_s)action_discard(){
-	<-self.intComs.orderChan
-	fmt.Println("New order will be handled later!\n")
-}
-
 func action_dummy(){
 	fmt.Println("fsm: dummy!\n")
 }
@@ -120,14 +120,14 @@ func action_dummy(){
 /* Finite State Machine initializations */
 func (fsm *Fsm_s)init_fsm_table(){
 	fsm.table = [][]func(){
-/*STATES:	  \	EVENTS:	//NewOrder				//FloorReached        	//Exec  					//TimerOut		//Obst					//EmgPressed
-/*IDLE       */  []func(){fsm.action_start,		action_dummy,				fsm.action_exec_same,action_dummy,	fsm.action_pause,		fsm.action_stop},
-/*DOORS_OPEN */  []func(){fsm.action_discard,	action_dummy,				action_dummy,			fsm.action_done,fsm.action_pause,	fsm.action_stop},  
-/*MOVING_UP  */  []func(){fsm.action_discard,	fsm.action_check_order,	fsm.action_exec,		action_dummy,	fsm.action_pause,		fsm.action_stop},
-/*MOVING_DOWN*/  []func(){fsm.action_discard,	fsm.action_check_order,	fsm.action_exec,		action_dummy,	fsm.action_pause,		fsm.action_stop},
-/*EMG_STOP   */  []func(){fsm.action_discard,	action_dummy,				action_dummy,			action_dummy,	fsm.action_pause,		fsm.action_stop},  
-/*OBST       */  []func(){fsm.action_discard,	action_dummy,				action_dummy,			action_dummy,	action_dummy,		fsm.action_stop}, 
-/*OBST+EMG	 */  []func(){fsm.action_discard,	action_dummy,				action_dummy,			action_dummy,	action_dummy,		fsm.action_stop}, 
+/*STATES:	  \	EVENTS:	//NewOrder			//FloorReached        	//Exec  					//TimerOut		//Obst					//EmgPressed
+/*IDLE       */  []func(){fsm.action_start,	action_dummy,				fsm.action_exec_same,action_dummy,	fsm.action_pause,		fsm.action_stop},
+/*DOORS_OPEN */  []func(){action_dummy,		action_dummy,				action_dummy,			fsm.action_done,fsm.action_pause,	fsm.action_stop},  
+/*MOVING_UP  */  []func(){action_dummy,		fsm.action_check_order,	fsm.action_exec,		action_dummy,	fsm.action_pause,		fsm.action_stop},
+/*MOVING_DOWN*/  []func(){action_dummy,		fsm.action_check_order,	fsm.action_exec,		action_dummy,	fsm.action_pause,		fsm.action_stop},
+/*EMG_STOP   */  []func(){action_dummy,		action_dummy,				action_dummy,			action_dummy,	fsm.action_pause,		fsm.action_stop},  
+/*OBST       */  []func(){action_dummy,		action_dummy,				action_dummy,			action_dummy,	action_dummy,			fsm.action_stop}, 
+/*OBST+EMG	 */  []func(){action_dummy,		action_dummy,				action_dummy,			action_dummy,	action_dummy,			fsm.action_stop}, 
 	}
 }
 
@@ -210,7 +210,7 @@ func (fsm *Fsm_s)generate_events(){
 	   case newOrder:=<- fsm.ExtComs.NewOrdersChan:
 		   fsm.intComs.eventChan <- NEW_ORDER
 			fsm.intComs.orderChan <- newOrder
-		case <-fsm.intComs.execChan:
+		case execOrder <- fsm.ExtComs.ExecResponseChan:
 			fsm.intComs.eventChan <- EXEC_ORDER
       case <-fsm.intComs.timeoutChan:
 			 fsm.intComs.eventChan <- TIMEOUT		

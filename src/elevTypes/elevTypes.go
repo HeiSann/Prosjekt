@@ -64,7 +64,8 @@ type Fsm_ExtComs_s struct{
    SetLightChan      chan<- Light_t
    SetFloorIndChan   chan<- int 
 	/* Channels from orders*/
-	NewOrdersChan    	<-chan Order_t  
+	NewOrdersChan    	<-chan Order_t		//order sends only when requested, or new order in empty queue
+	OrderExecChan		<-chan Order_t 
 	OrderExecdChan  	chan<- Order_t	
 	StopRequestChan  	chan<- Order_t		
    EmgTriggerdChan  	<-chan bool     	
