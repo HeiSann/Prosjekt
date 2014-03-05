@@ -1,14 +1,16 @@
 package elevTypes
 
 const N_FLOORS = 4
+const N_DIR = 3
+
+const SLOW_DOWM_MUTHA_FUKKA = 20
+
 
 type Direction_t int 
-
 const (
     UP Direction_t = iota
     DOWN
     NONE
-    N_DIR
 )
 
 type Button struct{
@@ -33,19 +35,21 @@ type Net_ExtComs_s struct{
 }
 
 type Orders_ExtComs_s struct{
-	/* Channels from comsManager */
-	OrderFromMeChan  		chan<- Order_t	
-	OrderToMeChan			<-chan Order_t
-	RequestScoreChan		chan<- Order_t
-	RespondScoreChan		<-chan Order_t
-	NetOrderUpdateChan	
-	
 	/* Channels initialized in orders */
-   NewOrdersChan    	<-chan Order_t 
-	OrderExecdChan  	chan<- Order_t	
-	ExecRequestChan  	chan<- Order_t	
-	ExecRespondChan	chan bool	
-   EmgTriggerdChan  	<-chan bool
+   NewOrdersChan    	chan Order_t 
+	ExecdOrderChan  	chan Order_t	
+	ExecRequestChan  	chan Order_t	
+	ExecResponseChan	chan bool	
+   EmgTriggerdChan  	chan bool
+	/* Channels from comsManager */
+	OrderFromMeChan  		chan Order_t	
+	OrderToMeChan			chan Order_t
+	RequestScoreChan		chan Order_t
+	RespondScoreChan		chan Order_t
+	NetOrderUpdateChan	chan Order_t
+	/* Channels from driver */
+   ButtonChan        <-chan Button
+   SetLightChan      chan<- Light_t
 }
 
 type Drivers_ExtComs_s struct{
@@ -60,7 +64,6 @@ type Drivers_ExtComs_s struct{
 	DoorOpenChan      chan<- bool
 }
 
-
 type Fsm_ExtComs_s struct{
 	/* Channels from driver */
    ButtonChan        <-chan Button
@@ -72,11 +75,11 @@ type Fsm_ExtComs_s struct{
    SetLightChan      chan<- Light_t
    SetFloorIndChan   chan<- int 
 	/* Channels from orders*/
-	NewOrdersChan    	<-chan Order_t		//order sends only when requested, or new order in empty queue
-	OrderExecChan		<-chan Order_t 
-	OrderExecdChan  	chan<- Order_t	
-	StopRequestChan  	chan<- Order_t		
-   EmgTriggerdChan  	<-chan bool     	
+	NewOrdersChan    	chan Order_t 
+	ExecdOrderChan  	chan Order_t	
+	ExecRequestChan  	chan Order_t	
+	ExecResponseChan	chan bool	
+   EmgTriggerdChan  	chan bool   	
 }
 
 

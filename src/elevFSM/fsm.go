@@ -2,6 +2,7 @@ package elevFSM
 
 import (
 	"fmt"
+	"time"
 	"elevTypes"
 )
 
@@ -45,7 +46,7 @@ type Fsm_s struct{
 
 /* FSM_init */
 func Init(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s)Fsm_s{
-   fmt.Println("elevCtrl.init()...")
+   fmt.Println("fsm.init()...")
 
 	fsm := Fsm_s{}
 	fsm.init_fsm_table()
@@ -60,7 +61,16 @@ func Init(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s)
 
 /* Finite State Machine Actions */
 func (self *Fsm_s)action_start(){
-		
+	order := <- self.intComs.newOrderChan
+	curr_floor:= self.lastFloor	
+	switch {
+		case order.Floor == curr_floor:
+			 self.intComs.eventChan <- EXEC_ORDER
+		case order.Floor < curr_floor:
+			self.start_down()
+		case order.Floor > curr_floor:
+			self.start_up()
+	}
 }
 
 func (self *Fsm_s)action_check_order(){
@@ -71,11 +81,10 @@ func (self *Fsm_s)action_check_order(){
 	//send_stop_request order
 	current := elevTypes.Order_t{floor, self.lastDir, true}
 	self.ExtComs.ExecRequestChan <- current
-	/*
-	resp :<- self.ExtComs.ExecResponseChan
-	if resp
-		self.intComs.eventChan <- EXEC
-	*/
+	resp :=<- self.ExtComs.ExecResponseChan
+	if resp{
+		self.intComs.eventChan <- EXEC_ORDER
+	}
 }
 
 func (self *Fsm_s)action_exec_same(){
@@ -101,7 +110,7 @@ func (self *Fsm_s)action_done(){
 	self.ExtComs.DoorOpenChan <- false
 	self.state = IDLE
 	fmt.Println("fsm: IDLE\n")
-	self.ExtComs.OrderExecdChan <- elevTypes.Order_t{self.lastFloor, self.lastDir, false}
+	self.ExtComs.ExecdOrderChan <- elevTypes.Order_t{self.lastFloor, self.lastDir, false}
 }   
 
 func (self *Fsm_s)action_stop(){
@@ -135,7 +144,6 @@ func(self *Fsm_s)init_intComs(){
 	self.intComs.eventChan 			= make(chan Event_t)
 	self.intComs.startTimerChan 	= make(chan bool)
 	self.intComs.timeoutChan		= make(chan bool)
-	self.intComs.orderChan  		= make(chan elevTypes.Order_t)
 	self.intComs.newOrderChan  	= make(chan elevTypes.Order_t)
 }
 
@@ -148,9 +156,9 @@ func(self *Fsm_s)init_ExtComs(driver elevTypes.Drivers_ExtComs_s, orders elevTyp
 	self.ExtComs.DoorOpenChan		= driver.DoorOpenChan
 	self.ExtComs.SetLightChan		= driver.SetLightChan
 	self.ExtComs.SetFloorIndChan	= driver.SetFloorIndChan
-	self.ExtComs.NewOrdersChan		= orders.OrderUpdatedChan
-	self.ExtComs.OrderExecdChan 	= orders.OrderExecdChan
-	self.ExtComs.StopRequestChan 	= orders.StopRequestChan
+	self.ExtComs.NewOrdersChan		= orders.NewOrdersChan
+	self.ExtComs.ExecdOrderChan 	= orders.ExecdOrderChan
+	self.ExtComs.ExecRequestChan 	= orders.ExecRequestChan 
 	self.ExtComs.EmgTriggerdChan	= orders.EmgTriggerdChan
 }
 
@@ -162,15 +170,17 @@ func (self *Fsm_s)start(){
 	for floor == -1{
 		floor = <- self.ExtComs.FloorChan
 	}	
+	fmt.Println("Found floor")
 	//stop motor
 	self.ExtComs.MotorChan <- elevTypes.NONE
+	fmt.Println(" floor sendt")
 	//update fsm vars
 	self.state = IDLE
 	self.lastFloor = floor
-	self.lastDir = NONE
+	self.lastDir = elevTypes.NONE
 	//start the fsm routunes
-	go fsm_update()
-	go fsm.generate_events()
+	go self.update()
+	go self.generate_events()
 }
 
 /* FSM help functions */
@@ -188,11 +198,13 @@ func (self *Fsm_s)start_up(){
 	fmt.Println("fsm: MOVING_UP\n")
 }
 
-func (self *Fsm_s)fsm_update(){
+func (self *Fsm_s)update(){
 	var event Event_t
 	for{
 		event =<- self.intComs.eventChan
 		self.table[self.state][event]()
+		fmt.Println("fmt.update: updated fsm[state][event]:", self.state, " ", event)
+		time.Sleep(time.Millisecond*elevTypes.SLOW_DOWM_MUTHA_FUKKA)
 	}
 }
 
@@ -203,18 +215,27 @@ func (fsm *Fsm_s)generate_events(){
 			fsm.intComs.eventChan <- EMG
 	   case <- fsm.ExtComs.ObsChan:
 			fsm.intComs.eventChan <- OBSTRUCTION
-	   case floor:=<- self.ExtComs.FloorChan:
+	   case floor:=<- fsm.ExtComs.FloorChan:
+			fmt.Println("...")
 		   if floor != -1 && floor != fsm.lastFloor{
+				fmt.Println("fsm.generate_events: reached new floor!") 
 				fsm.intComs.eventChan <- FLOOR_REACHED
 		   }
-	   case newOrder:=<- fsm.ExtComs.NewOrdersChan:
+	   case order:=<- fsm.ExtComs.NewOrdersChan:
+			fmt.Println("fsm: ah, waking up")
 		   fsm.intComs.eventChan <- NEW_ORDER
-			fsm.intComs.orderChan <- newOrder
-		case execOrder <- fsm.ExtComs.ExecResponseChan:
-			fsm.intComs.eventChan <- EXEC_ORDER
+			fmt.Println("fsm: brushing teeth")
+			fsm.intComs.newOrderChan <- order
+			fmt.Println("fsm: woke up")
+		case execOrder:= <- fsm.ExtComs.ExecResponseChan:
+			if execOrder{
+				fsm.intComs.eventChan <- EXEC_ORDER
+			}
       case <-fsm.intComs.timeoutChan:
 			 fsm.intComs.eventChan <- TIMEOUT		
-		}		
+		default:
+			time.Sleep(time.Millisecond*elevTypes.SLOW_DOWM_MUTHA_FUKKA)	
+		}
 	}
 }
 
