@@ -7,21 +7,23 @@ import(
 
 type Orders_s struct{
    table          [][]bool
-   ToFsm_new      chan elevTypes.Order_t  
-   ToComs_new     chan elevTypes.Order_t     
-   ToComs_del     chan elevTypes.Order_t
+   elevTypes.Orders_ExtComs_s
 }
 
 func Init() Orders_s{
    fmt.Println("elevOrders.init()...")
    
-   var table [][]bool
+   var table [N_FLOORS][N_DIR]bool
+	var extcoms = elevTypes.Orders_ExtComs_s{}
+
+	NewOrdersChan    	make(chan elevTypes.Order_t) 
+   OrderUpdatedChan	make(chan elevTypes.Order_t)
+	OrderExecdChan  	make(chan elevTypes.Order_t)
+	StopRequestChan  	make(chan elevTypes.Order_t)		
+   EmgTriggerdChan  	make(chan bool)
+ 
    
-   toFsm_new   := make(chan elevTypes.Order_t)
-   toComs_new  := make(chan elevTypes.Order_t)
-   toFsm_del   := make(chan elevTypes.Order_t)
-   
-   return Orders_s{table, toFsm_new, toComs_new, toFsm_del}
+   return Orders_s{}
 }
 
 func compare(elevTypes.Order_t) bool{

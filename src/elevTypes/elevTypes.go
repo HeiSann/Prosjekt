@@ -33,12 +33,12 @@ type Net_ExtComs_s struct{
 }
 
 type Orders_ExtComs_s struct{
-	// from comsManager
+	/* Channels from comsManager */
 	OrderToNetChan  	chan<- Order_t	
 	NetToOrderNew		<-chan Order_t
 	RequestScore		chan<- Order_t
 	RespondScore		<-chan Order_t
-	// 
+	/* Channels initialized in driver */
    NewOrdersChan    	<-chan Order_t 
    OrderUpdatedChan	<-chan Order_t 
 	OrderExecdChan  	chan<- Order_t	
