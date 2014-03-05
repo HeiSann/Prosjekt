@@ -34,15 +34,17 @@ type Net_ExtComs_s struct{
 
 type Orders_ExtComs_s struct{
 	/* Channels from comsManager */
-	OrderToNetChan  	chan<- Order_t	
-	NetToOrderNew		<-chan Order_t
-	RequestScore		chan<- Order_t
-	RespondScore		<-chan Order_t
-	/* Channels initialized in driver */
+	OrderFromMeChan  		chan<- Order_t	
+	OrderToMeChan			<-chan Order_t
+	RequestScoreChan		chan<- Order_t
+	RespondScoreChan		<-chan Order_t
+	NetOrderUpdateChan	
+	
+	/* Channels initialized in orders */
    NewOrdersChan    	<-chan Order_t 
-   OrderUpdatedChan	<-chan Order_t 
 	OrderExecdChan  	chan<- Order_t	
-	StopRequestChan  	chan<- Order_t		
+	ExecRequestChan  	chan<- Order_t	
+	ExecRespondChan	chan bool	
    EmgTriggerdChan  	<-chan bool
 }
 
