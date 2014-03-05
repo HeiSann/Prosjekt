@@ -29,19 +29,19 @@ const(
 
 type intComs_s struct{
    eventChan		chan Event_t
-	startTimerChan chan bool
-	timeoutChan    chan bool
-	orderChan      chan Order_t
-	newOrderChan	chan Order_t
+	startTimerChan	chan bool
+	timeoutChan		chan bool
+	orderChan		chan elevTypes.Order_t
+	newOrderChan 	chan elevTypes.Order_t
 }
 
 type Fsm_s struct{
-   fsm_table	   [][]func()
-	state 		   State_t
-	lastDir 	      elevTypes.Direction_t
-	lastFloor      int 
-	intComs			intComs_s
-	ExtComs        elevTypes.Fsm_ExtComs_s
+   table			[][]func()
+	state 		State_t
+	lastDir		elevTypes.Direction_t
+	lastFloor   int 
+	intComs		intComs_s
+	ExtComs     elevTypes.Fsm_ExtComs_s
 }
 
 /* FSM_init */
@@ -51,7 +51,7 @@ func Init(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s)
 	fsm := Fsm_s{}
 	fsm.init_fsm_table()
 	fsm.init_intComs()
-	fsm.init_ExtComs()
+	fsm.init_ExtComs(driver, orders)
 
 	fsm.start()
 	
@@ -66,17 +66,19 @@ func (self *Fsm_s)action_start(){
 
 func (self *Fsm_s)action_check_order(){
 	//get_floor
-	//update_lights
+	floor := <- self.ExtComs.FloorChan
+	//TODO: update_lights
+	
 	//send_stop_request order
-	current := Order_t{floor, fsm.lastDir}
-	self.ExtComs.RequestStopChan <- current
+	current := elevTypes.Order_t{floor, self.lastDir, true}
+	self.ExtComs.StopRequestChan <- current
 }
 
 func (self *Fsm_s)action_exec_same(){
 	self.ExtComs.DoorOpenChan <- true
 	self.ExtComs.SetLightChan <- elevTypes.Light_t{self.lastFloor, self.lastDir, false}
 	self.intComs.startTimerChan <- true
-	self.ExtComs.OrderExdChan <- elevTypes.Order_t{self.lastFloor, self.lastDir, false}
+	self.ExtComs.OrderExecdChan <- elevTypes.Order_t{self.lastFloor, self.lastDir, false}
 	self.state = DOORS_OPEN 
 	fmt.Println("fsm: DOORS_OPEN\n")
 }
@@ -94,12 +96,8 @@ func (self *Fsm_s)action_done(){
 	self.ExtComs.DoorOpenChan <- false
 	self.state = IDLE
 	fmt.Println("fsm: IDLE\n")
-	self.ExtComs.OrderExdChan <- elevTypes.Order_t{self.lastFloor, self.lastDir, false}
+	self.ExtComs.OrderExecdChan <- elevTypes.Order_t{self.lastFloor, self.lastDir, false}
 }   
-	
-func (self *Fsm_s)start){
-    self.handle_next_order()
-}
 
 func (self *Fsm_s)action_stop(){
 	self.ExtComs.MotorChan <- elevTypes.NONE
@@ -120,16 +118,16 @@ func action_dummy(){
 }
 
 /* Finite State Machine initializations */
-func (fsm *Fsm_s)init_fsm_table2(){
+func (fsm *Fsm_s)init_fsm_table(){
 	fsm.table = [][]func(){
-/*STATES:	  \	EVENTS:	//NewOrder			//FloorReached        	//Exec  					//TimerOut			//Obst			//EmgPressed
-/*IDLE       */  []func(){fsm.action_start,	action_dummy,				fsm.action_exec_same,action_dummy,		action_pause,	action_stop},
-/*DOORS_OPEN */  []func(){action_discard,		action_dummy,   			action_dummy,  		fsm.action_done,	action_pause,  action_stop},  
-/*MOVING_UP  */  []func(){action_discard,		fsm.action_check_order, fsm.action_exec,		action_dummy,		action_pause,  action_stop},
-/*MOVING_DOWN*/  []func(){action_discard,		fsm.action_check_order, fsm.action_exec,		action_dummy,		action_pause,  action_stop},
-/*EMG_STOP   */  []func(){action_discard,		action_dummy,           action_dummy,     	action_dummy,		action_pause,  action_stop},  
-/*OBST       */  []func(){action_discard,		action_dummy,           action_dummy,     	action_dummy,		action_dummy,  action_stop}, 
-/*OBST+EMG	 */  []func(){action_discard,		action_dummy,           action_dummy,     	action_dummy,		action_dummy,  action_stop}, 
+/*STATES:	  \	EVENTS:	//NewOrder				//FloorReached        	//Exec  					//TimerOut		//Obst					//EmgPressed
+/*IDLE       */  []func(){fsm.action_start,		action_dummy,				fsm.action_exec_same,action_dummy,	fsm.action_pause,		fsm.action_stop},
+/*DOORS_OPEN */  []func(){fsm.action_discard,	action_dummy,				action_dummy,			fsm.action_done,fsm.action_pause,	fsm.action_stop},  
+/*MOVING_UP  */  []func(){fsm.action_discard,	fsm.action_check_order,	fsm.action_exec,		action_dummy,	fsm.action_pause,		fsm.action_stop},
+/*MOVING_DOWN*/  []func(){fsm.action_discard,	fsm.action_check_order,	fsm.action_exec,		action_dummy,	fsm.action_pause,		fsm.action_stop},
+/*EMG_STOP   */  []func(){fsm.action_discard,	action_dummy,				action_dummy,			action_dummy,	fsm.action_pause,		fsm.action_stop},  
+/*OBST       */  []func(){fsm.action_discard,	action_dummy,				action_dummy,			action_dummy,	action_dummy,		fsm.action_stop}, 
+/*OBST+EMG	 */  []func(){fsm.action_discard,	action_dummy,				action_dummy,			action_dummy,	action_dummy,		fsm.action_stop}, 
 	}
 }
 
@@ -137,34 +135,38 @@ func(self *Fsm_s)init_intComs(){
 	self.intComs.eventChan 			= make(chan Event_t)
 	self.intComs.startTimerChan 	= make(chan bool)
 	self.intComs.timeoutChan		= make(chan bool)
-	self.intComs.readyChan  		= make(chan bool)
+	self.intComs.orderChan  		= make(chan elevTypes.Order_t)
+	self.intComs.newOrderChan  	= make(chan elevTypes.Order_t)
 }
 
-func(self *Fsm_s)init_ExtComs(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s){
-	self.OrderExdChan 	= make(chan Order_t)  //fsm -> orders	
-	self.ButtonChan 		= driver.ButtonChan
-	self.FloorChan 		= driver.SensorChan
-	self.StopButtonChan	= driver.StopButtonChan
-	self.ObsChan			= driver.ObsChan	
-	self.MotorChan			= driver.MotorChan
-	self.DoorOpenChan		= driver.DoorOpenChan
-	self.SetLightChan		= driver.SetLightChan
-	self.FloorIndChan		= driver.SetFloorIndChan
-	self.NewOrdersChan	= orders.OrderUpdatedChan
-	self.EmgTriggerChan	= orders.EMG2Fsm
+func(self *Fsm_s)init_ExtComs(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s){	
+	self.ExtComs.ButtonChan 		= driver.ButtonChan
+	self.ExtComs.FloorChan 			= driver.SensorChan
+	self.ExtComs.StopButtonChan	= driver.StopButtonChan
+	self.ExtComs.ObsChan				= driver.ObsChan	
+	self.ExtComs.MotorChan			= driver.MotorChan
+	self.ExtComs.DoorOpenChan		= driver.DoorOpenChan
+	self.ExtComs.SetLightChan		= driver.SetLightChan
+	self.ExtComs.SetFloorIndChan	= driver.SetFloorIndChan
+	self.ExtComs.NewOrdersChan		= orders.OrderUpdatedChan
+	self.ExtComs.OrderExecdChan 	= orders.OrderExecdChan
+	self.ExtComs.StopRequestChan 	= orders.StopRequestChan
+	self.ExtComs.EmgTriggerdChan	= orders.EmgTriggerdChan
 }
 
 func (self *Fsm_s)start(){
-	if not_at_floor
+	floor := <- self.ExtComs.FloorChan
+	if floor == -1{
 		self.ExtComs.MotorChan <- elevTypes.DOWN
-	for not_at_floor{
-		//wait until floor reached
+	}
+	for floor == -1{
+		floor = <- self.ExtComs.FloorChan
 	}	
 	//stop motor
 	self.ExtComs.MotorChan <- elevTypes.NONE
 	//update fsm vars
 	self.state = IDLE
-	self.lastfloor = cur_floor
+	self.lastFloor = floor
 	self.lastDir = NONE
 	//start the fsm routunes
 	go fsm_update()
@@ -190,7 +192,7 @@ func (self *Fsm_s)fsm_update(){
 	var event Event_t
 	for{
 		event =<- self.intComs.eventChan
-		self.fsm_table[self.state][event]()
+		self.table[self.state][event]()
 	}
 }
 
@@ -208,11 +210,11 @@ func (fsm *Fsm_s)generate_events(){
 	   case newOrder:=<- fsm.ExtComs.NewOrdersChan:
 		   fsm.intComs.eventChan <- NEW_ORDER
 			fsm.intComs.orderChan <- newOrder
-			}
 		case <-fsm.intComs.execChan:
 			fsm.intComs.eventChan <- EXEC_ORDER
       case <-fsm.intComs.timeoutChan:
-			 fsm.intComs.eventChan <- TIMEOUT				
+			 fsm.intComs.eventChan <- TIMEOUT		
+		}		
 	}
 }
 

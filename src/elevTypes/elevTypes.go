@@ -33,7 +33,11 @@ type Net_ExtComs_s struct{
 }
 
 type Orders_ExtComs_s struct{
-   Dummy int
+   NewOrdersChan    	<-chan Order_t 
+   OrderUpdatedChan	<-chan Order_t 
+	OrderExecdChan  	chan<- Order_t	
+	StopRequestChan  	chan<- Order_t		
+   EmgTriggerdChan  	<-chan bool
 }
 
 type Drivers_ExtComs_s struct{
@@ -43,7 +47,7 @@ type Drivers_ExtComs_s struct{
 	StopButtonChan 	<-chan bool
 	ObsChan 				<-chan bool
 	MotorChan 			chan<- Direction_t
-	SetLightChan 		chan<- int
+	SetLightChan 		chan<- Light_t
 	SetFloorIndChan 	chan<- int
 	DoorOpenChan      chan<- bool
 }
@@ -62,7 +66,7 @@ type Fsm_ExtComs_s struct{
 	/* Channels from orders*/
 	NewOrdersChan    	<-chan Order_t  
 	OrderExecdChan  	chan<- Order_t	
-	StopRequestChan  	<-chan Order_t		
+	StopRequestChan  	chan<- Order_t		
    EmgTriggerdChan  	<-chan bool     	
 }
 
