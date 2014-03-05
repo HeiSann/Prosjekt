@@ -23,3 +23,7 @@ func Init() Orders_s{
    
    return Orders_s{table, toFsm_new, toComs_new, toFsm_del}
 }
+
+func compare(elevTypes.Order_t) bool{
+	
+}
