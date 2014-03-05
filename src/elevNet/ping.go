@@ -16,6 +16,7 @@ const LIMIT = 50000000
 func (elevNet *ElevNet_s) RefreshNetwork(){
 	elevPingTimes:=make(map[string]time.Time)
 	go elevNet.intComs.pingTimer()
+	go elevNet.ExtComs.BroadCastPing()
     for{
         select{
     /*
@@ -33,11 +34,7 @@ func (elevNet *ElevNet_s) RefreshNetwork(){
         case deadIp := <-elevNet.intComs.deadPinger:
         	fmt.Println("ping case deadIP")
             elevNet.intComs.deletePinger(elevPingTimes,deadIp)
-  
-        default:
-            time.Sleep(time.Millisecond*SLEEP_TIME) 
-            elevNet.ExtComs.BroadCastPing()
-            
+                    
         }//end select
     }//end for
 }
@@ -81,8 +78,11 @@ func (toTcp *InternalChan_s)deletePinger(pingMap map[string]time.Time, ip string
 func (toNet *ExternalChan_s) BroadCastPing(){
 	myIp:=GetMyIP()
 	destIp:=GetBroadcastIP(myIp)
-	msg:=ConstructPing(destIp,myIp)
-	toNet.SendBcast<-msg
+	for{	
+		msg:=ConstructPing(destIp,myIp)
+		toNet.SendBcast<-msg
+		time.Sleep(time.Millisecond*SLEEP_TIME)
+	}
 		//construct Ping msg and broadcast denne må gjennom coms manager
 	//Bcast<-pingmsg
 }
@@ -103,6 +103,7 @@ func ConstructPing(ipTo string, ipFrom string)elevTypes.Message{
     return elevTypes.Message{ipTo, ipFrom, "PING", ""}
 }
 
+	
             
 //hva hvis error når man sender melding over nettverk. Kanskje en kanal som sender den ikke sendte meldingen tilbake til comsManager som sender den dit den kom fra??
 
