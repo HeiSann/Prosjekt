@@ -7,8 +7,7 @@ import( "time"
 const PING_TIMEOUT_MILLI = 50
 const SLEEP_TIME = 30
 const LIMIT = 50000000
-const TEST_IP = "129.241.187.255"
-const MY_IP = "129.241.187.152"
+
 
 //new channels fix this, only for oversikt
 
@@ -19,11 +18,12 @@ func (elevNet *ElevNet_s) RefreshNetwork(){
 	go elevNet.intComs.pingTimer()
     for{
         select{
-        
+    /*
         case newip := <-elevNet.intComs.newPinger:
         	fmt.Println("got new ping ip")
             addPinger(elevPingTimes, newip)
             fmt.Println("woho new elevator friend")
+	*/
         case msg := <-elevNet.ExtComs.PingMsg:
 			elevNet.intComs.updatePingTime(elevPingTimes,msg) 
 						
@@ -79,7 +79,9 @@ func (toTcp *InternalChan_s)deletePinger(pingMap map[string]time.Time, ip string
 }
 
 func (toNet *ExternalChan_s) BroadCastPing(){
-	msg:=ConstructPing(TEST_IP,MY_IP)
+	myIp:=GetMyIP()
+	destIp:=GetBroadcastIP(myIp)
+	msg:=ConstructPing(destIp,myIp)
 	toNet.SendBcast<-msg
 		//construct Ping msg and broadcast denne må gjennom coms manager
 	//Bcast<-pingmsg
