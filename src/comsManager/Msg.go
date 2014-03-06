@@ -1,33 +1,34 @@
 package comsManager
 
-import ("elevNet"
+import (
 			"fmt"
-			"elevTypes"
+			//"time"
 		  )
 
 
 
 
-func DeliverMsg(fromNet elevNet.ExternalChan_s){
+func (fromNet *ComsManager_s)RecieveMessageFromNet(){
     for{
-        msg:=<-fromNet.RecvMsg
+        msg:=<-fromNet.ExtComs.RecvMsg
     
         switch msg.Msg_type{
 		  case "test":
 				fmt.Println("tcp msg recieved")
 		  case "PING":
-		  		fromNet.PingMsg<-msg
+		  		fromNet.ExtComs.PingMsg<-msg
         default:
             fmt.Println("not able to read msg header")
         }
     }
 }
 
-func MsgSend(msg elevTypes.Message, toNet elevNet.ExternalChan_s){ //TTEST
-	for{
-		select{
-		}
-	}
+func (toNet *ComsManager_s)SendMessagesToNet(){
+
 }
 
+func (fromOrder *ComsManager_s)ForwardMessageFromOrder(){
+}
 
+func(toOrder *ComsManager_s)DeliverMessageToOrder(){
+}

@@ -9,15 +9,12 @@ const TARGET_PORT = "20011"
 const LISTEN_PORT = "30011"
 
 
-
-
-type ExternalChan_s struct{
-	RecvMsg chan elevTypes.Message
-	SendMsg chan elevTypes.Message  
-	SendBcast chan elevTypes.Message
-	PingMsg chan elevTypes.Message
+type ElevNet_s struct{
+	Ip string
+	ExtComs elevTypes.Net_ExtComs_s
+	intComs InternalChan_s
 }
-    
+
 type InternalChan_s struct{
 	connect_to chan bool
 	new_conn chan net.Conn
@@ -29,22 +26,17 @@ type InternalChan_s struct{
 	connectToElev chan string
 }
 
-type ElevNet_s struct{
-	ip string
-	ExtComs ExternalChan_s
-	intComs InternalChan_s
-}
 
 func Init()ElevNet_s{
 	elevNet:=ElevNet_s{}
-	elevNet.ip=GetMyIP()
+	elevNet.Ip=GetMyIP()
 	elevNet.ExtComs=ExternalChannelsInit()
 	elevNet.intComs=InternalChannelsInit()	
 	return elevNet
 }
 
-func ExternalChannelsInit()ExternalChan_s{
-	extChans:=ExternalChan_s{}
+func ExternalChannelsInit() elevTypes.Net_ExtComs_s{
+	extChans:=elevTypes.Net_ExtComs_s{}
 	extChans.RecvMsg = make(chan elevTypes.Message)
 	extChans.SendMsg = make(chan elevTypes.Message)
 	extChans.SendBcast = make(chan elevTypes.Message)

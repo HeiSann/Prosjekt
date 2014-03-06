@@ -31,7 +31,21 @@ type Order_t struct{
 }
 
 type Net_ExtComs_s struct{
-   Dummy int
+   RecvMsg chan Message
+	SendMsg chan Message  
+	SendBcast chan Message
+	PingMsg chan Message
+}
+
+type ComsManager_ExtComs_s struct{
+	/* inited in self */
+	send chan Message
+	//chan to order init here
+	/*inited in net*/
+	RecvMsg chan Message
+	SendMsg chan Message  
+	SendBcast chan Message
+	PingMsg chan Message
 }
 
 type Orders_ExtComs_s struct{
