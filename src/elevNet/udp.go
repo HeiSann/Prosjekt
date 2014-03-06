@@ -6,7 +6,7 @@ import (
 
 const UDP_PORT ="20000"//All Elevs listen to this Broadcast Port
 
-func (fromComs *ExternalChan_s) SendMsgToAll(){
+func (fromComs *ElevNet_s) SendMsgToAll(){
     bcastIP:=GetBroadcastIP(GetMyIP())
     
 	serverAddr, err := net.ResolveUDPAddr("udp",bcastIP+":"+UDP_PORT)
@@ -16,13 +16,13 @@ func (fromComs *ExternalChan_s) SendMsgToAll(){
 	if err != nil {return}
 	
 	for {
-		msg:=<-fromComs.SendBcast
+		msg:=<-fromComs.ExtComs.SendBcast
 		bstream:=message2bytestream(msg)
 		con.Write(bstream)
 	}		
 }
 
-func (toComs *ExternalChan_s)ListenToBroadcast() {
+func (toComs *ElevNet_s)ListenToBroadcast() {
 	myIp :=GetMyIP()
 	bcastIP:=GetBroadcastIP(myIp)
 	
@@ -41,7 +41,7 @@ func (toComs *ExternalChan_s)ListenToBroadcast() {
 		
     		if remoteAddr.IP.String() != myIp {
 					msg:=bytestream2message(buf)
-    	    		toComs.RecvMsg<-msg
+    	    		toComs.ExtComs.RecvMsg<-msg
     		}       
       }	
 }

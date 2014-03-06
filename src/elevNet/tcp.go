@@ -42,7 +42,7 @@ func (elevNet *ElevNet_s)ManageTCPCom(){
 	}//end for
 }
 
-func (toComsMan *ExternalChan_s) listenForTcpMsg (con net.Conn){
+func (toComsMan *ElevNet_s) listenForTcpMsg (con net.Conn){
 	bstream := make([]byte, BUFF_SIZE)
     for {
 		_, err := con.Read(bstream[0:])
@@ -50,7 +50,7 @@ func (toComsMan *ExternalChan_s) listenForTcpMsg (con net.Conn){
 			//fmt.Println("error in listen")			
 		}else{
 			msg:=bytestream2message(bstream)
-			toComsMan.RecvMsg<-msg
+			toComsMan.ExtComs.RecvMsg<-msg
 		}
 	time.Sleep(time.Millisecond*SLEEPTIME)
 	}
@@ -124,7 +124,7 @@ func (elevnet ElevNet_s) registerNewCon (con net.Conn, tcpConnections map[string
 		fmt.Println(ok)
 		fmt.Println("connection not in map, adding connection")
 		tcpConnections[ip]=con
-		go elevnet.ExtComs.listenForTcpMsg(con)
+		go elevnet.listenForTcpMsg(con)
 		fmt.Println("started to listen")
 		//elevnet.intComs.newPinger<-ip
 		fmt.Println("send new pinger")

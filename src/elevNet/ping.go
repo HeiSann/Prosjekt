@@ -16,7 +16,7 @@ const LIMIT = 50000000
 func (elevNet *ElevNet_s) RefreshNetwork(){
 	elevPingTimes:=make(map[string]time.Time)
 	go elevNet.intComs.pingTimer()
-	go elevNet.ExtComs.BroadCastPing()
+	go elevNet.BroadCastPing()
     for{
         select{
     /*
@@ -77,12 +77,12 @@ func (toTcp *InternalChan_s)deletePinger(pingMap map[string]time.Time, ip string
 	toTcp.deadElev<-ip	
 }
 
-func (toNet *ExternalChan_s) BroadCastPing(){
+func (toNet *ElevNet_s) BroadCastPing(){
 	myIp:=GetMyIP()
 	destIp:=GetBroadcastIP(myIp)
 	for{	
 		msg:=ConstructPing(destIp,myIp)
-		toNet.SendBcast<-msg
+		toNet.ExtComs.SendBcast<-msg
 		time.Sleep(time.Millisecond*SLEEP_TIME)
 	}
 		//construct Ping msg and broadcast denne må gjennom coms manager
