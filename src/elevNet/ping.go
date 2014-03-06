@@ -7,8 +7,7 @@ import( "time"
 const PING_TIMEOUT_MILLI = 50
 const SLEEP_TIME = 30
 const LIMIT = 50000000
-const TEST_IP = "129.241.187.255"
-const MY_IP = "129.241.187.152"
+
 
 //new channels fix this, only for oversikt
 
@@ -17,13 +16,15 @@ const MY_IP = "129.241.187.152"
 func (elevNet *ElevNet_s) RefreshNetwork(){
 	elevPingTimes:=make(map[string]time.Time)
 	go elevNet.intComs.pingTimer()
+	go elevNet.ExtComs.BroadCastPing()
     for{
         select{
-        
+    /*
         case newip := <-elevNet.intComs.newPinger:
         	fmt.Println("got new ping ip")
             addPinger(elevPingTimes, newip)
             fmt.Println("woho new elevator friend")
+	*/
         case msg := <-elevNet.ExtComs.PingMsg:
 			elevNet.intComs.updatePingTime(elevPingTimes,msg) 
 						
@@ -33,11 +34,9 @@ func (elevNet *ElevNet_s) RefreshNetwork(){
         case deadIp := <-elevNet.intComs.deadPinger:
         	fmt.Println("ping case deadIP")
             elevNet.intComs.deletePinger(elevPingTimes,deadIp)
-  
-        default:
-            time.Sleep(time.Millisecond*SLEEP_TIME) 
-            elevNet.ExtComs.BroadCastPing()
-            
+		default:
+			time.Sleep(time.Millisecond*SLEEPTIME)
+                    
         }//end select
     }//end for
 }
@@ -79,8 +78,13 @@ func (toTcp *InternalChan_s)deletePinger(pingMap map[string]time.Time, ip string
 }
 
 func (toNet *ExternalChan_s) BroadCastPing(){
-	msg:=ConstructPing(TEST_IP,MY_IP)
-	toNet.SendBcast<-msg
+	myIp:=GetMyIP()
+	destIp:=GetBroadcastIP(myIp)
+	for{	
+		msg:=ConstructPing(destIp,myIp)
+		toNet.SendBcast<-msg
+		time.Sleep(time.Millisecond*SLEEP_TIME)
+	}
 		//construct Ping msg and broadcast denne må gjennom coms manager
 	//Bcast<-pingmsg
 }
@@ -101,6 +105,7 @@ func ConstructPing(ipTo string, ipFrom string)elevTypes.Message{
     return elevTypes.Message{ipTo, ipFrom, "PING", ""}
 }
 
+	
             
 //hva hvis error når man sender melding over nettverk. Kanskje en kanal som sender den ikke sendte meldingen tilbake til comsManager som sender den dit den kom fra??
 
