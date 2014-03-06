@@ -4,8 +4,9 @@ import(
 	"fmt"	
 	"strings"	
 	"elevTypes"
+	"time"
 )
-
+const SLEEPTIME = 5
 const CON_ATMPTS = 10
 const TCP_PORT = "30000" //All elevators will listen to this port for TCP connections
 const BUFF_SIZE = 1024
@@ -34,6 +35,8 @@ func (elevNet *ElevNet_s)ManageTCPCom(){
 		case ip := <-elevNet.intComs.deadElev:
         		fmt.Println("case dead")
             deleteCon(ip, tcpConnections)
+		default:
+			time.Sleep(time.Millisecond*SLEEPTIME)
 			
 		}//end select
 	}//end for
@@ -48,8 +51,8 @@ func (toComsMan *ExternalChan_s) listenForTcpMsg (con net.Conn){
 		}else{
 			msg:=bytestream2message(bstream)
 			toComsMan.RecvMsg<-msg
-			
 		}
+	time.Sleep(time.Millisecond*SLEEPTIME)
 	}
 }
 
@@ -66,6 +69,7 @@ func (toManager *InternalChan_s)listenTcpCon(){
 			toManager.new_conn<-con
 			fmt.Println("recieved connection, sending to handle")   			
    		}
+	time.Sleep(time.Millisecond*SLEEPTIME)
    	}
 }	
 
@@ -105,7 +109,8 @@ func (toManager *InternalChan_s)ConnectElev(ipAdr string){
 				fmt.Println("sendt con on chan")
 				break
 			}
-		}//end BIG if/else		
+		}//end BIG if/else	
+		time.Sleep(time.Millisecond*SLEEPTIME)	
 	}//end for
 }
 

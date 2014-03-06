@@ -34,6 +34,8 @@ func (elevNet *ElevNet_s) RefreshNetwork(){
         case deadIp := <-elevNet.intComs.deadPinger:
         	fmt.Println("ping case deadIP")
             elevNet.intComs.deletePinger(elevPingTimes,deadIp)
+		default:
+			time.Sleep(time.Millisecond*SLEEPTIME)
                     
         }//end select
     }//end for
