@@ -84,7 +84,7 @@ func ClearAllLights(){
         ClearLight(2, elevTypes.NONE)
         ClearLight(3, elevTypes.NONE)
         ClearLight(4, elevTypes.NONE)
-		CloseDoor()
+		Set_bit(DOOR_OPEN)
         ClearStopButton()
 }
 
@@ -157,12 +157,12 @@ func listenButtons(buttonChan chan elevTypes.Button){
 		for key, button := range buttonMap {
 			newValue := Read_bit(key)
 			if newValue && !buttonList[key] {
-				fmt.Println("Drivers.listenButtonsbutton: button pressed!")
+				fmt.Println("Drivers.listenButtonsbutton: button pressed: ", button)
            		newButton := button
             	go func() {		//why not select???
-					fmt.Println("waiting to send...")
+					//fmt.Println("waiting to send...")
                 	buttonChan <- newButton
-					fmt.Println("button sendt!")
+					//fmt.Println("button sendt!")
             	}()
 			}
 			buttonList[key] = newValue      
@@ -187,14 +187,33 @@ func listenSensors(sensorChan chan int){
     }
     
     for {
-        time.Sleep(time.Millisecond*elevTypes.SLOW_DOWM_MUTHA_FUKKA)
         atFloor = false
         for key, floor := range floorMap {
+            //fmt.Println("drivers.listenSensors: checking key, floor: ", key, floor)
             if Read_bit(key) {
+               //fmt.Println("drivers.listenSensors: got reading on floor: ", floor)
+               /*
+                //fmt.Println("got floor reading")
+                go func() {		//why not select???
+					//fmt.Println("drivers.listenSensors: waiting to send: ", floor)
+                	sensorChan <- floor
+					//fmt.Println("drivers.listenSensors: floor sendt!")
+            	}()
+                */
+                // fmt.Println("drivers.listenSensors: trying to send floor on blocking: ", floor)
+                sensorChan <- floor
+                //fmt.Println("drivers.listenSensors: sendt floor on blocking: ", floor)
+                /*
+                fmt.Println("drivers.listenSensors: trying to send floor unblocking: ", floor)
                 select {		//why not go?
                     case sensorChan <- floor:
+                        fmt.Println("drivers.listenSensors: sendt floor unblocking: ", floor)
+                    
+                    
                     default:
+                        fmt.Println("drivers.listenSensors: gave up sending unblocking: ", floor)
                 }
+                */
                 atFloor = true
             }
         }
@@ -205,18 +224,19 @@ func listenSensors(sensorChan chan int){
             }
 			
         }
+        time.Sleep(time.Millisecond*elevTypes.SLOW_DOWM_MUTHA_FUKKA)
 	}   
 }
 
 func Init() Drivers_s{
 	
-   buttonChan		:= make(chan elevTypes.Button)
-   sensorChan		:= make(chan int)
-   motorChan		:= make(chan elevTypes.Direction_t)
-   stopButtonChan := make(chan bool)
-   obsChan			:= make(chan bool)	
+    buttonChan		:= make(chan elevTypes.Button)
+    sensorChan		:= make(chan int)
+    motorChan		:= make(chan elevTypes.Direction_t)
+    stopButtonChan  := make(chan bool)
+    obsChan			:= make(chan bool)	
 	
-	setLighChan	:= make(chan elevTypes.Light_t)
+	setLightChan	:= make(chan elevTypes.Light_t)
 	setFloorIndChan := make(chan int)
 	doorOpenChan	:= make(chan bool)
 
@@ -231,17 +251,18 @@ func Init() Drivers_s{
 	go listenButtons(buttonChan)
 	go listenSensors(sensorChan)
 	go motorCtrl(motorChan)
+	go listenCtrlSignals(setLightChan, setFloorIndChan, doorOpenChan)
 	
 	driver := elevTypes.Drivers_ExtComs_s{}
 
-	driver.ButtonChan = buttonChan
-	driver.SensorChan = sensorChan
-	driver.MotorChan = motorChan
-	driver.StopButtonChan = stopButtonChan
-	driver.ObsChan = obsChan 
-	driver.SetLightChan = setLighChan
-	driver.SetFloorIndChan = setFloorIndChan
-	driver.DoorOpenChan = doorOpenChan
+	driver.ButtonChan       = buttonChan
+	driver.SensorChan       = sensorChan
+	driver.MotorChan        = motorChan
+	driver.StopButtonChan   = stopButtonChan
+	driver.ObsChan          = obsChan 
+	driver.SetLightChan     = setLightChan
+	driver.SetFloorIndChan  = setFloorIndChan
+	driver.DoorOpenChan     = doorOpenChan
    
 	
 	go func() {
@@ -260,12 +281,22 @@ func Init() Drivers_s{
     return Drivers_s{driver}
 }
 
-func OpenDoor(){
-    	Set_bit(DOOR_OPEN)
-}
-
-func CloseDoor(){
-    	Clear_bit(DOOR_OPEN)
+func listenCtrlSignals(setLightChan chan elevTypes.Light_t, setFloorIndChan chan int, doorOpenChan chan bool){
+    for{
+        select{
+            case light := <-setLightChan:
+                fmt.Println("should turn on light: ", light)
+            case floor := <-setFloorIndChan:
+                fmt.Println("should turn on FloorInd in floor: ", floor)
+            case open := <-doorOpenChan:
+                if open{
+                    Set_bit(DOOR_OPEN)
+                }else{
+                    Clear_bit(DOOR_OPEN)
+                }
+        }
+        time.Sleep(time.Millisecond*elevTypes.SLOW_DOWM_MUTHA_FUKKA)
+    }
 }
 
 func GetStopButton() bool{
