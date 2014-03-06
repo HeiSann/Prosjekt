@@ -83,15 +83,35 @@ func (self *Orders_s)orderHandler(){
 }
 
 func (self *Orders_s)doesExist(order elevTypes.Order_t) bool{
-	return self.queue[order.Floor][elevTypes.UP] || self.queue[order.Floor][elevTypes.NONE]|| self.queue[order.Floor][elevTypes.NONE]
+    switch(order.Direction){
+        case elevTypes.UP:
+            return self.queue[order.Floor][elevTypes.UP] || self.queue[order.Floor][elevTypes.NONE]
+        case elevTypes.DOWN:
+            return self.queue[order.Floor][elevTypes.DOWN] || self.queue[order.Floor][elevTypes.NONE]
+        case elevTypes.NONE:
+            fmt.Println("order.doesExist: order.dir = NONE; this probably shouldn't happen?")
+            return true
+        default:
+            return self.queue[order.Floor][elevTypes.UP] || self.queue[order.Floor][elevTypes.NONE]|| self.queue[order.Floor][elevTypes.DOWN]
+    }
 }
 
 func (self *Orders_s)update_queue(order elevTypes.Order_t){
 	fmt.Println("orders.updating_queue: ", order)
 	fmt.Println("queue was: ", self.queue)
 	wasEmpty := self.isQueueEmpty()	
-	self.queue[order.Floor][order.Direction] = order.Status
-	self.queue[order.Floor][elevTypes.NONE] = order.Status
+	if order.Status{
+	    self.queue[order.Floor][order.Direction] = order.Status
+	    self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, true}
+	    fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
+	}else{
+	    self.queue[order.Floor][elevTypes.NONE] = order.Status
+	    self.queue[order.Floor][order.Direction] = order.Status
+	    self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
+	    fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, elevTypes.NONE, false})
+	    self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, false}
+	    fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, false})
+	}
 	//fmt.Println("queue value set OK!")
 	if wasEmpty{
 		fmt.Println("orders.update_queue: sending order to fsm on NewOrderChan!")

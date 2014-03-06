@@ -18,54 +18,54 @@ type Drivers_s struct{
 }
 
 
-func SetLight(floor int, dir elevTypes.Direction_t){
+func setLight(floor int, dir elevTypes.Direction_t){
     switch{  
-    case floor == 1 && dir == elevTypes.NONE:
+    case floor == 0 && dir == elevTypes.NONE:
             Set_bit(LIGHT_COMMAND1)
-    case floor == 1 && dir == elevTypes.UP:
+    case floor == 0 && dir == elevTypes.UP:
             Set_bit(LIGHT_UP1)
- 	case floor == 2 && dir == elevTypes.NONE:
+ 	case floor == 1 && dir == elevTypes.NONE:
         Set_bit(LIGHT_COMMAND2)
-    case floor == 2 && dir == elevTypes.UP:
+    case floor == 1 && dir == elevTypes.UP:
         Set_bit(LIGHT_UP2)
-    case floor == 2 && dir == elevTypes.DOWN:
+    case floor == 1 && dir == elevTypes.DOWN:
         Set_bit(LIGHT_DOWN2)
-    case floor == 3 && dir == elevTypes.NONE:
+    case floor == 2 && dir == elevTypes.NONE:
         Set_bit(LIGHT_COMMAND3)
-    case floor == 3 && dir == elevTypes.UP:
+    case floor == 2 && dir == elevTypes.UP:
         Set_bit(LIGHT_UP3)
-    case floor == 3 && dir == elevTypes.DOWN:
+    case floor == 2 && dir == elevTypes.DOWN:
         Set_bit(LIGHT_DOWN4)        
-    case floor == 4 && dir == elevTypes.NONE:
+    case floor == 3 && dir == elevTypes.NONE:
         Set_bit(LIGHT_COMMAND4)
-    case floor == 4 && dir == elevTypes.DOWN:
+    case floor == 3 && dir == elevTypes.DOWN:
         Set_bit(LIGHT_DOWN4)
     default:
         fmt.Println("Error: Illegal floor or direction")
 	}
 }
 
-func ClearLight(floor int, dir elevTypes.Direction_t){
+func clearLight(floor int, dir elevTypes.Direction_t){
     switch{  
-    case floor == 1 && dir == elevTypes.NONE:
+    case floor == 0 && dir == elevTypes.NONE:
         Clear_bit(LIGHT_COMMAND1)
-    case floor == 1 && dir == elevTypes.UP:
+    case floor == 0 && dir == elevTypes.UP:
         Clear_bit(LIGHT_UP1)
- 	case floor == 2 && dir == elevTypes.NONE:
+ 	case floor == 1 && dir == elevTypes.NONE:
         Clear_bit(LIGHT_COMMAND2)
-    case floor == 2 && dir == elevTypes.UP:
+    case floor == 1 && dir == elevTypes.UP:
         Clear_bit(LIGHT_UP2)
-    case floor == 2 && dir == elevTypes.DOWN:
+    case floor == 1 && dir == elevTypes.DOWN:
         Clear_bit(LIGHT_DOWN2)      
-    case floor == 3 && dir == elevTypes.NONE:
+    case floor == 2 && dir == elevTypes.NONE:
         Clear_bit(LIGHT_COMMAND3)
-    case floor == 3 && dir == elevTypes.UP:
+    case floor == 2 && dir == elevTypes.UP:
         Clear_bit(LIGHT_UP3)
-    case floor == 3 && dir == elevTypes.DOWN:
+    case floor == 2 && dir == elevTypes.DOWN:
         Clear_bit(LIGHT_DOWN4)   
-    case floor == 4 && dir == elevTypes.NONE:
+    case floor == 3 && dir == elevTypes.NONE:
         Clear_bit(LIGHT_COMMAND4)
-    case floor == 4 && dir == elevTypes.DOWN:
+    case floor == 3 && dir == elevTypes.DOWN:
         Clear_bit(LIGHT_DOWN4)
     default:
         fmt.Println("elevdriver: Error! Illegal floor or direction!")
@@ -73,17 +73,17 @@ func ClearLight(floor int, dir elevTypes.Direction_t){
 	}
 }
 
-func ClearAllLights(){
-        ClearLight(1, elevTypes.UP)
-        ClearLight(2, elevTypes.UP)
-        ClearLight(3, elevTypes.UP)
-        ClearLight(2, elevTypes.DOWN)
-        ClearLight(3, elevTypes.DOWN)
-        ClearLight(4, elevTypes.DOWN)
-        ClearLight(1, elevTypes.NONE)
-        ClearLight(2, elevTypes.NONE)
-        ClearLight(3, elevTypes.NONE)
-        ClearLight(4, elevTypes.NONE)
+func clearAllLights(){
+        clearLight(0, elevTypes.UP)
+        clearLight(1, elevTypes.UP)
+        clearLight(2, elevTypes.UP)
+        clearLight(1, elevTypes.DOWN)
+        clearLight(2, elevTypes.DOWN)
+        clearLight(3, elevTypes.DOWN)
+        clearLight(0, elevTypes.NONE)
+        clearLight(1, elevTypes.NONE)
+        clearLight(2, elevTypes.NONE)
+        clearLight(3, elevTypes.NONE)
 		Set_bit(DOOR_OPEN)
         ClearStopButton()
 }
@@ -246,7 +246,7 @@ func Init() Drivers_s{
 	    fmt.Println("elevdriver: Driver init()... FAILED!")
 	}
 	
-	ClearAllLights();
+	clearAllLights();
 	
 	go listenButtons(buttonChan)
 	go listenSensors(sensorChan)
@@ -274,7 +274,7 @@ func Init() Drivers_s{
 		/* stop motor, no reverse and delay */
         Clear_bit(MOTORDIR)
     	Write_analog(MOTOR,SPEED0)
-        ClearAllLights()
+        clearAllLights()
         os.Exit(1)
     }()
     
@@ -285,9 +285,13 @@ func listenCtrlSignals(setLightChan chan elevTypes.Light_t, setFloorIndChan chan
     for{
         select{
             case light := <-setLightChan:
-                fmt.Println("should turn on light: ", light)
+                if light.Set{
+                    setLight(light.Floor, light.Direction)
+                }else{
+                    clearLight(light.Floor, light.Direction)
+                }
             case floor := <-setFloorIndChan:
-                fmt.Println("should turn on FloorInd in floor: ", floor)
+                setFloor(floor)
             case open := <-doorOpenChan:
                 if open{
                     Set_bit(DOOR_OPEN)
@@ -297,6 +301,23 @@ func listenCtrlSignals(setLightChan chan elevTypes.Light_t, setFloorIndChan chan
         }
         time.Sleep(time.Millisecond*elevTypes.SLOW_DOWM_MUTHA_FUKKA)
     }
+}
+
+func setFloor(floor int) {
+        switch floor {
+        case 0:
+                Clear_bit(FLOOR_IND1)
+                Clear_bit(FLOOR_IND2)
+        case 1:
+                Clear_bit(FLOOR_IND1)
+                Set_bit(FLOOR_IND2)
+        case 2:
+                Set_bit(FLOOR_IND1)
+                Clear_bit(FLOOR_IND2)
+        case 3:
+                Set_bit(FLOOR_IND1)
+                Set_bit(FLOOR_IND2)
+        }
 }
 
 func GetStopButton() bool{

@@ -62,19 +62,13 @@ func (self *Fsm_s)action_start(){
 
 func (self *Fsm_s)action_check_order(){
     fmt.Println("fsm.action_check_order")
-	//TODO: update_lights
 	
-	//send_stop_request order
+	self.ExtComs.SetFloorIndChan <- self.lastFloor
+	fmt.Println("fsm.action_check_order: floorIndSignal sendt")
+	
 	current := elevTypes.Order_t{self.lastFloor, self.lastDir, true}
 	self.ExtComs.ExecRequestChan <- current
 	fmt.Println("fsm.action_check_order: sendt to orders on Ext.Coms.ExecRecuest: ", current)
-	/*
-	resp := <-self.ExtComs.ExecResponseChan
-	fmt.Println("fsm.action_check_order:got response from orders on Ext.Coms.ExecResponse: ", resp)
-	if resp{
-		self.intComs.eventChan <- EXEC_ORDER
-	}
-	*/
 }
 
 func (self *Fsm_s)action_exec_same(){
