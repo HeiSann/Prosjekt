@@ -20,19 +20,38 @@ func (fromNet *ComsManager_s)(){
 		  case "MYCOST":
 		  		//go Auction()
 		  		//one goroutine for each auction?
-		  		//goroutine need to end when a winner is selected and the auctioneer has recieved an acc
-		  case "NEED COST"
+		  		//send cost value and ip to the right auction
+		  case "NEED COST":
 		  		//send cost function and the order it relates to. JSON for order send?? 
-		  case "NEWORDER"
+		  case "NEWORDER":
 		  		//send new order to Order module
 		  		//function who unpacks the message and sends it
+		  case "ACK":
+		  //send to auction so that we are certain that the elevator recieved and saved the order
+		  case "SET LIGHT":
+		  //Could be in "NEED COST" msg. When other elevator get external orders every elevator needs to set the lights
+		  case "DEAD ELEVATOR":
+		  //broadcast the ip. Start auctioning the dead elevators external orders
+		  case "TCP ERROR"
+		  	//go routine
+		  	//try to send msg againg
+		  	//ig msg fails n times. Send msg to the sender that the msg was lost. Take the order if the msg was an order type
         default:
-            fmt.Println("not able to read msg header. Something went terribly wrong, oh god, i have dissapointed the other elevators, they will hate me so much")
+            fmt.Println("not able to read msg header. Something went terribly wrong, oh god, i have dissapointed the other elevators, they will hate me so much. Pls ctrlC me right now I cant stand this pain any longer")
         }
     }
 }
+//The auctions will be communicatin to the order module directy nad the select will not be needed? ONLY able to perform one auction at a time?
+func (from Order_s)OrderComs(){
 
-func (from Order_s)OrderComs
+for{
+        select:
+        case msg:=<-ExtComs.ExternalOrder:
+			//start goroutine for auction
+		case msg:=<.intComs.newOrder
+		case "MYCOST":
+		  
+}
 
 func (toNet *ComsManager_s)SendMessagesToNet(){
 
