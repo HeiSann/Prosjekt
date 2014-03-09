@@ -2,6 +2,7 @@ package comsManager
 
 import ("fmt"
 		//"time"
+		"elevTypes"
 		)
 
 
@@ -10,16 +11,17 @@ import ("fmt"
 func (fromNet *ComsManager_s)RecieveMessageFromNet(){
     for{
         msg:=<-fromNet.ExtComs.RecvMsg
+        
     
         switch msg.Msg_type{
 		  case "test":
 				fmt.Println("tcp msg recieved")
+				fromNet.TcpSenderTest(msg.From)
+				
 		  case "PING":
 		  		fromNet.ExtComs.PingMsg<-msg
-		  case "MYCOST":
-		  		//go Auction()
-		  		//one goroutine for each auction?
-		  		//send cost value and ip to the right auction
+		  case "COST":
+		  		fromNet.intComs.costMsg<-msg
 		  case "NEED COST":
 		  		//send cost function and the order it relates to. JSON for order send?? 
 		  case "NEWORDER":
@@ -36,9 +38,18 @@ func (fromNet *ComsManager_s)RecieveMessageFromNet(){
 		  	//try to send msg againg
 		  	//ig msg fails n times. Send msg to the sender that the msg was lost. Take the order if the msg was an order type
         default:
+            fmt.Println(msg.From)
             fmt.Println("not able to read msg header. Something went terribly wrong, oh god, i have dissapointed the other elevators, they will hate me so much. Pls ctrlC me right now I cant stand this pain any longer")
        }
     }
+}
+
+func (toNet *ComsManager_s)TcpSenderTest(to string){
+        msg:=elevTypes.Message{}
+        msg.From= "129.241.187.156"
+        msg.To= to
+        msg.Msg_type="test"
+        toNet.ExtComs.SendMsg<-msg 
 }
 
 /*

@@ -56,7 +56,7 @@ func (toComsMan *ElevNet_s) listenForTcpMsg (con net.Conn){
 			msg:=bytestream2message(bstream)
 			toComsMan.ExtComs.RecvMsg<-msg
 		}
-	time.Sleep(time.Millisecond*SLEEPTIME)
+	   time.Sleep(time.Millisecond*SLEEPTIME)
 	}
 }
 

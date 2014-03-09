@@ -4,7 +4,7 @@ import( "time"
         "fmt"
 
        )
-const PING_TIMEOUT_MILLI = 50
+const PING_TIMEOUT_MILLI = 70
 const SLEEP_TIME = 30
 const LIMIT = 50000000
 

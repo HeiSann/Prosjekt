@@ -42,6 +42,12 @@ type ComsManager_ExtComs_s struct{
 	/* inited in self */
 	send chan Message
 	//chan to order init here
+   RequestScore chan int
+   RecieveScore chan int
+   NewExtOrder chan Message //external oder in elevator. This will star auction
+   WaitAuction chan bool //to oder. Wait for ongoing auction
+      
+   	
 	/*inited in net*/
 	RecvMsg chan Message
 	SendMsg chan Message  
