@@ -17,7 +17,7 @@ type InternalChan_s struct{
 
 func InternalChannelsInit()InternalChan_s{
 	intChans:=InternalChan_s{}
-	intChans.dymmy=make(chan int)
+	intChans.auctionWinner=make(chan string)
 	return intChans
 }
 

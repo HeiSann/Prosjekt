@@ -35,6 +35,7 @@ type Net_ExtComs_s struct{
 	SendMsg chan Message  
 	SendBcast chan Message
 	PingMsg chan Message
+	SendMsgToAll chan Message
 }
 
 type ComsManager_ExtComs_s struct{
@@ -46,6 +47,7 @@ type ComsManager_ExtComs_s struct{
 	SendMsg chan Message  
 	SendBcast chan Message
 	PingMsg chan Message
+	SendMsgToAll chan Message
 }
 
 type Orders_ExtComs_s struct{
