@@ -1,14 +1,13 @@
 package comsManager
 
-import (
-			"fmt"
-			//"time"
-		  )
+import ("fmt"
+		//"time"
+		)
 
 
 
 
-func (fromNet *ComsManager_s)(){
+func (fromNet *ComsManager_s)RecieveMessageFromNet(){
     for{
         msg:=<-fromNet.ExtComs.RecvMsg
     
@@ -32,31 +31,32 @@ func (fromNet *ComsManager_s)(){
 		  //Could be in "NEED COST" msg. When other elevator get external orders every elevator needs to set the lights
 		  case "DEAD ELEVATOR":
 		  //broadcast the ip. Start auctioning the dead elevators external orders
-		  case "TCP ERROR"
+		  case "TCP ERROR":
 		  	//go routine
 		  	//try to send msg againg
 		  	//ig msg fails n times. Send msg to the sender that the msg was lost. Take the order if the msg was an order type
         default:
             fmt.Println("not able to read msg header. Something went terribly wrong, oh god, i have dissapointed the other elevators, they will hate me so much. Pls ctrlC me right now I cant stand this pain any longer")
-        }
+       }
     }
 }
-//The auctions will be communicatin to the order module directy nad the select will not be needed? ONLY able to perform one auction at a time?
+
+/*
 func (from Order_s)OrderComs(){
 
-for{
-        select:
+    for{
+        select{
         case msg:=<-ExtComs.ExternalOrder:
 			//start goroutine for auction
 		case msg:=<-intComs.newOrder:
 		case msg:=<-myComst:
 		case msg:=<-orderDone:
 		case msg:=<-bcastAuction:
-		case
+		}
+	}
 }
-
+*/
 func (toNet *ComsManager_s)SendMessagesToNet(){
-
 }
 
 func (fromOrder *ComsManager_s)ForwardMessageFromOrder(){

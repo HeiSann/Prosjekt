@@ -11,7 +11,7 @@ type ComsManager_s struct{
 
     
 type InternalChan_s struct{
-	dymmy chan int
+	auctionWinner chan string
 }
 
 
