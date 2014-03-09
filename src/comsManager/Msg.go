@@ -48,9 +48,11 @@ for{
         select:
         case msg:=<-ExtComs.ExternalOrder:
 			//start goroutine for auction
-		case msg:=<.intComs.newOrder
-		case "MYCOST":
-		  
+		case msg:=<-intComs.newOrder:
+		case msg:=<-myComst:
+		case msg:=<-orderDone:
+		case msg:=<-bcastAuction:
+		case
 }
 
 func (toNet *ComsManager_s)SendMessagesToNet(){
