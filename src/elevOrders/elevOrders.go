@@ -105,12 +105,22 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t){
 	    self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, true}
 	    fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
 	}else{
-	    self.queue[order.Floor][elevTypes.NONE] = order.Status
-	    self.queue[order.Floor][order.Direction] = order.Status
-	    self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
-	    fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, elevTypes.NONE, false})
-	    self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, false}
-	    fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, false})
+		if order.Direction == elevTypes.NONE{
+			self.queue[order.Floor][elevTypes.UP] = order.Status
+	    	self.queue[order.Floor][elevTypes.DOWN] = order.Status
+	    	self.queue[order.Floor][elevTypes.NONE] = order.Status
+	    	
+	    	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.UP, false}
+	    	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.DOWN, false}
+	    	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
+	    }else{		
+			self.queue[order.Floor][elevTypes.NONE] = order.Status
+			self.queue[order.Floor][order.Direction] = order.Status
+			self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
+			fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, elevTypes.NONE, false})
+			self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, false}
+			fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, false})
+		}
 	}
 	//fmt.Println("queue value set OK!")
 	if wasEmpty{

@@ -35,13 +35,14 @@ func setLight(floor int, dir elevTypes.Direction_t){
     case floor == 2 && dir == elevTypes.UP:
         Set_bit(LIGHT_UP3)
     case floor == 2 && dir == elevTypes.DOWN:
-        Set_bit(LIGHT_DOWN4)        
+        Set_bit(LIGHT_DOWN3)        
     case floor == 3 && dir == elevTypes.NONE:
         Set_bit(LIGHT_COMMAND4)
     case floor == 3 && dir == elevTypes.DOWN:
         Set_bit(LIGHT_DOWN4)
     default:
-        fmt.Println("Error: Illegal floor or direction")
+        fmt.Println("elevDrivers.setLight: Error, Illegal floor or direction")
+        fmt.Println("dir: ", dir, ", floor: ",floor)
 	}
 }
 
@@ -62,13 +63,13 @@ func clearLight(floor int, dir elevTypes.Direction_t){
     case floor == 2 && dir == elevTypes.UP:
         Clear_bit(LIGHT_UP3)
     case floor == 2 && dir == elevTypes.DOWN:
-        Clear_bit(LIGHT_DOWN4)   
+        Clear_bit(LIGHT_DOWN3)   
     case floor == 3 && dir == elevTypes.NONE:
         Clear_bit(LIGHT_COMMAND4)
     case floor == 3 && dir == elevTypes.DOWN:
         Clear_bit(LIGHT_DOWN4)
     default:
-        fmt.Println("elevdriver: Error! Illegal floor or direction!")
+        fmt.Println("elevDrivers.clearLight: Error! Illegal floor or direction!")
 		fmt.Println("dir: ", dir, ", floor: ",floor)
 	}
 }
@@ -122,13 +123,13 @@ func motorCtrl(motorChan chan elevTypes.Direction_t){
 		 	   	     	Set_bit(MOTORDIR)
 		 	      	  	Write_analog(MOTOR,SPEED0)
 						case elevTypes.NONE:
-							fmt.Println("elevdriver: lastDir=newDir=elevTypes.NONE, problem?")
+							fmt.Println("elevDrivers.motorCtrl: lastDir=newDir=elevTypes.NONE, problem?")
 		      		default:
-		         		fmt.Println("elevdriver: ERROR, illegal lastDir")
+		         		fmt.Println("elevDrivers.motorCtrl: ERROR, illegal lastDir")
 					}
 				default:
 		        	Write_analog(MOTOR,SPEED0)
-		        	fmt.Println("elevdriver: ERROR, illegal motor direction")
+		        	fmt.Println("elevDrivers.motorCtrl: ERROR, illegal motor direction")
 			}
         	lastDir = newDir
 		}
@@ -252,6 +253,8 @@ func Init() Drivers_s{
 	go listenSensors(sensorChan)
 	go motorCtrl(motorChan)
 	go listenCtrlSignals(setLightChan, setFloorIndChan, doorOpenChan)
+	
+	doorOpenChan <- false
 	
 	driver := elevTypes.Drivers_ExtComs_s{}
 
