@@ -27,7 +27,7 @@ func Init(driver elevTypes.Drivers_ExtComs_s) Orders_s{
 	extcoms.ExecdOrderChan  	= make(chan elevTypes.Order_t)
 	extcoms.ExecRequestChan  	= make(chan elevTypes.Order_t)		
 	extcoms.ExecResponseChan	= make(chan bool)
-    extcoms.EmgTriggerdChan  	= make(chan bool)
+	extcoms.EmgTriggerdChan  	= make(chan bool)
 
 	orders := Orders_s{table, false, extcoms}
 
@@ -51,7 +51,7 @@ func (self *Orders_s)orderHandler(){
 
 		/* from FSM */
 		case order:= <-self.ExtComs.ExecdOrderChan:
-		    fmt.Println("orders.orderHandler: got execdOrder: ", order)
+			fmt.Println("orders.orderHandler: got execdOrder: ", order)
 			self.update_queue(order)
 			//ExtComs.OrderToNetChan <- order
 			nextOrder:= get_next_order(self.queue, order)
@@ -61,7 +61,7 @@ func (self *Orders_s)orderHandler(){
 			}
 
 		case order:= <-self.ExtComs.ExecRequestChan:
-		    fmt.Println("orders.orderHandler: got execRequest: ", order)
+			fmt.Println("orders.orderHandler: got execRequest: ", order)
 			shouldExec := self.doesExist(order)
 			if shouldExec{
 			    fmt.Println("orders.orderHandler: sending true on execResponse ")
@@ -218,9 +218,43 @@ func get_next_order(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool,order elevTy
     }
 }  
 
-func getScore(order elevTypes.Order_t){
-}
 
 func clear_list(){
+}
+
+func getScore(order elevTypes.Order_t, elev elevTypes.Order_t) int{
+    order_already_added := does_exist(order)
+    //Empty queue
+    if elev.Direction == elevTypes.NONE
+        return 0 + abs(order.Floor-elev.Floor);
+        
+    //Existing identical order
+    elseif order_already_added
+        return elevTypes.N_FLOORS + abs(order.Floor-elev.Floor)
+        
+    //Order in same direction, infront of the elevator
+    elseif (elev.Direction == order.Direction) && (order.Floor>elev.Floor) && (order.Direction==elevTypes.UP)
+        return 2*elevTypes.N_FLOORS + order.Floor-elev.Floor + 2*n_order
+    elseif (elev.Direction == order.Direction) && (order.Floor<elev.Floor) && (order.Direction==elevTypes.DOWN)
+        return 2*elevTypes.N_FLOORS + elev.Floor-order.Floor + 2*n_order
+        
+    //Order in opposite direction infront of elevator
+    elseif (elev.Direction ~= order.Direction) && (order.Floor>elev.Floor) && (order.Direction==elevTypes.UP)
+        return 5*elevTypes.N_FLOORS + order.Floor-elev.Floor + 2*n_order
+    elseif (elev.Direction ~= order.Direction) && (order.Floor<elev.Floor) && (order.Direction==elevTypes.DOWN)
+        return 5*elevTypes.N_FLOORS + elev.Floor-order.Floor + 2*n_order
+        
+    //Order in opposite direction behind the elevator
+    elseif (elev.Direction ~= order.Direction) && (order.Floor>elev.Floor) && (order.Direction==elevTypes.UP)
+        return 8*elevTypes.N_FLOORS + order.Floor-elev.Floor + 2*n_order
+    elseif (elev.Direction ~= order.Direction) && (order.Floor<elev.Floor) && (order.Direction==elevTypes.DOWN)
+        return 8*elevTypes.N_FLOORS + elev.Floor-order.Floor + 2*n_order
+        
+    //Order in same direction behind the elevator
+    elseif (elev.Direction == order.Direction) && (order.Floor<elev.Floor) && (order.Direction==elevTypes.UP)
+        return 11*elevTypes.N_FLOORS + elev.Floor-order.Floor + 2*n_order
+    elseif (elev.Direction == order.Direction) && (order.Floor>elev.Floor) && (order.Direction==elevTypes.DOWN)
+        return 11*elevTypes.N_FLOORS + order.Floor-elev.Floor + 2*n_order
+    }
 }
 
