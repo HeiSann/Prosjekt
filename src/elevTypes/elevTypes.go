@@ -48,7 +48,7 @@ type ComsManager_ExtComs_s struct{
 	/* inited in self */
 	send chan Message
 	//chan to order init here
-    AuctionOrder chan Order_t //external oder in elevator. This will star auction
+	AuctionOrder chan Order_t //external oder in elevator. This will star auction
 	RequestCost chan Order_t
 	RecvCost chan int
 	AddOrder chan Order_t
@@ -84,32 +84,32 @@ type Orders_ExtComs_s struct{
 
 type Drivers_ExtComs_s struct{
 	/* Channels initialized in driver */
-	ButtonChan 			<-chan Button
-	SensorChan 			<-chan int
+	ButtonChan 		<-chan Button
+	SensorChan 		<-chan int
 	StopButtonChan 	<-chan bool
-	ObsChan 				<-chan bool
-	MotorChan 			chan<- Direction_t
-	SetLightChan 		chan<- Light_t
-	SetFloorIndChan 	chan<- int
-	DoorOpenChan      chan<- bool
+	ObsChan 		<-chan bool
+	MotorChan 		chan<- Direction_t
+	SetLightChan 	chan<- Light_t
+	SetFloorIndChan chan<- int
+	DoorOpenChan    chan<- bool
 }
 
 type Fsm_ExtComs_s struct{
 	/* Channels from driver */
-   ButtonChan        <-chan Button
-   FloorChan         <-chan int
-   StopButtonChan    <-chan bool
-   ObsChan           <-chan bool
-   MotorChan         chan<- Direction_t
-   DoorOpenChan      chan<- bool
-   SetLightChan      chan<- Light_t
-   SetFloorIndChan   chan<- int 
+	ButtonChan        <-chan Button
+	FloorChan         <-chan int
+	StopButtonChan    <-chan bool
+	ObsChan           <-chan bool
+	MotorChan         chan<- Direction_t
+	DoorOpenChan      chan<- bool
+	SetLightChan      chan<- Light_t
+	SetFloorIndChan   chan<- int 
 	/* Channels from orders*/
-	NewOrdersChan    	chan Order_t 
-	ExecdOrderChan  	chan Order_t	
-	ExecRequestChan  	chan Order_t	
+	NewOrdersChan		chan Order_t 
+	ExecdOrderChan		chan Order_t	
+	ExecRequestChan		chan Order_t	
 	ExecResponseChan	chan bool	
-   EmgTriggerdChan  	chan bool   	
+	EmgTriggerdChan		chan bool   	
 }
 
 

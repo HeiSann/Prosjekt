@@ -2,8 +2,6 @@ package main
 
 import(
    "fmt"
-   "elevTypes"
-   "messages"
    "elevNet"
    "comsManager"
    "elevDrivers"
@@ -12,22 +10,26 @@ import(
 )
 
 type Elevator struct{
-	driver      Drivers_s
-	net         Net_s
-	coms        ComsManager_s
-	orders      Orders_s
-	fsm         Fsm_s
+	driver      elevDrivers.Drivers_s
+	net         elevNet.ElevNet_s
+	coms        comsManager.ComsManager_s
+	orders      elevOrders.Orders_s
+	fsm         elevFSM.Fsm_s
 }
 
 func main(){
-   var net = elevNet.init()
-   var coms = comsManager(net.ExtChan)
-   var drivers = elevDrivers.init()
-   var orders = elevOrders.init(drivers.ExtChan, coms.ExtChan)
-   var fsm = elevFSM.init(drivers.ExtComs, orders.ExtComs)
+   end := make(chan bool)
+
+	fmt.Println("start of main")
+   var drivers = elevDrivers.Init()
+   var net = elevNet.Init()
+   var coms = comsManager.Init(net.Ip, net.ExtComs)
+   var orders = elevOrders.Init(drivers.ExtComs, coms.ExtComs)
+   var fsm = elevFSM.Init(drivers.ExtComs, orders.ExtComs)
    
-   var Elev = elevTypes.Elevator{net, coms, driver, orders, fsm}
+   var Elev = Elevator{drivers, net, coms, orders, fsm}
        
-   for{}
+   <-end
+	fmt.Println(Elev)
     
 }

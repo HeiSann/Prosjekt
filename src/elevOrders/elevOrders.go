@@ -15,7 +15,7 @@ type Orders_s struct{
 	ExtComs			elevTypes.Orders_ExtComs_s
 }
 
-func Init(driver elevTypes.Drivers_ExtComs_s) Orders_s{
+func Init(driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManager_ExtComs_s) Orders_s{
 	fmt.Println("elevOrders.init()...")
    
 	tableMap := make(map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool)
@@ -32,6 +32,13 @@ func Init(driver elevTypes.Drivers_ExtComs_s) Orders_s{
 	extcoms.ExecRequestChan  	= make(chan elevTypes.Order_t)		
 	extcoms.ExecResponseChan	= make(chan bool)
 	extcoms.EmgTriggerdChan  	= make(chan bool)
+	
+	extcoms.AuctionOrder			= coms.AuctionOrder
+	extcoms.RequestScoreChan	= coms.RequestCost
+	extcoms.RespondScoreChan	= coms.RecvCost
+	extcoms.AddOrder 				= coms.AddOrder
+	extcoms.SendOrderUpdate 	= coms.SendOrderUpdate
+	extcoms.RecvOrderUpdate 	= coms.RecvOrderUpdate
 
 	orders := Orders_s{tableMap, false, extcoms}
 
@@ -59,8 +66,11 @@ func (self *Orders_s)orderHandler(){
 		case order:= <-self.ExtComs.ExecdOrderChan:
 			fmt.Println("orders.orderHandler: got execdOrder: ", order)
 			self.update_queue(order, MY_IP)
+			fmt.Println("orders.orderHandler: updating queue success! trying to send: self.ExtComs.SendOrderUpdate <- order. ChanID: ", self.ExtComs.SendOrderUpdate)
 			self.ExtComs.SendOrderUpdate <- order
+			fmt.Println("orders.orderHandler: orderUpdate sendt! trying to check nextOrder")
 			nextOrder:= get_next_order(self.queues[MY_IP], order)
+			fmt.Println("orders.orderHandler: got execdOrder: ", order)
 			if nextOrder.Active{
 			    self.ExtComs.NewOrdersChan <- nextOrder
 			    fmt.Println("orders.orderHandler: next order sendt to fsm: ", nextOrder)

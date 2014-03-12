@@ -61,8 +61,11 @@ func (self *ComsManager_s)ForwardMessageFromOrder(){
 	for{
 		select{
 		case order:=<- self.ExtComs.SendOrderUpdate:
+			fmt.Println("comsManager.ForwardMessageFromOrder: got order: ", order)
 			msg:=constructUpdateMsg(self.Ip, order, self.Ip)
 			self.ExtComs.SendMsgToAll<-msg
+			fmt.Println("comsManager.ForwardMessageFromOrder: sendt msg self.ExtComs.SendMsgToAll<-msg, msg=", msg)
+		default:
 			time.Sleep(time.Millisecond*SELECT_SLEEP_TIME)
 		}
 	}	

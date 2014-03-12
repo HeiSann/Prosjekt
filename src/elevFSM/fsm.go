@@ -77,11 +77,7 @@ func (self *Fsm_s)action_check_order(){
 func (self *Fsm_s)action_exec_same(){
     //fmt.Println("fsm.action_exec_same")
 	self.ExtComs.DoorOpenChan <- true
-	//fmt.Println("fsm.action_exec_same: door opened, trying to turn off light: ", elevTypes.Light_t{self.lastFloor, self.lastDir, false})
-	//self.ExtComs.SetLightChan <- elevTypes.Light_t{self.lastFloor, self.lastDir, false}
-	//fmt.Println("fsm.action_exec_same: light turned off, trying to start timer")
 	go startTimer(self.intComs.timeoutChan, elevTypes.DOOR_OPEN_TIME)
-	//fmt.Println("fsm.action_exec_same: channel started")
 	self.lastDir = elevTypes.NONE
 	self.state = DOORS_OPEN 
 	fmt.Println("fsm: DOORS_OPEN\n")

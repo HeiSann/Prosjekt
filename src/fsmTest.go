@@ -3,6 +3,8 @@ package main
 import(
 	"fmt"
    "elevDrivers"
+   "elevNet"
+   "comsManager"
    "elevOrders"
    "elevFSM"
 )
@@ -18,7 +20,9 @@ func main(){
 
 	fmt.Println("start of main")
    var drivers = elevDrivers.Init()
-   var orders = elevOrders.Init(drivers.ExtComs)
+   var net = elevNet.Init()
+   var coms = comsManager.Init(net.Ip, net.ExtComs)
+   var orders = elevOrders.Init(drivers.ExtComs, coms.ExtComs)
    var fsm = elevFSM.Init(drivers.ExtComs, orders.ExtComs)
    
    var Elev = Elevator{drivers, orders, fsm}
