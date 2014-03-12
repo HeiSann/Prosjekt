@@ -24,16 +24,10 @@ type Light_t struct{
    Set      	bool
 }
 
-type Status_t int 
-const (
-    Pending Status_t = iota
-    Execd
-)
-
 type Order_t struct{
    Floor       int
    Direction   Direction_t   
-   Status      bool
+   Active      bool
 }
 
 type ElevPos_t struct{
@@ -54,8 +48,6 @@ type ComsManager_ExtComs_s struct{
 	/* inited in self */
 	send chan Message
 	//chan to order init here
-    RequestScore chan int
-    RecieveScore chan int
     AuctionOrder chan Order_t //external oder in elevator. This will star auction
 	RequestCost chan Order_t
 	RecvCost chan int
@@ -63,7 +55,6 @@ type ComsManager_ExtComs_s struct{
 	SendOrderUpdate chan Order_t
 	RecvOrderUpdate chan Message
       
-   	
 	/*inited in net*/
 	RecvMsg chan Message
 	SendMsg chan Message  
@@ -74,25 +65,26 @@ type ComsManager_ExtComs_s struct{
 
 type Orders_ExtComs_s struct{
 	/* Channels initialized in orders */
-   NewOrdersChan    	chan Order_t 
+	NewOrdersChan    	chan Order_t 
 	ExecdOrderChan  	chan Order_t	
 	ExecRequestChan  	chan Order_t	
 	ExecResponseChan	chan bool	
-   EmgTriggerdChan  	chan bool
+	EmgTriggerdChan  	chan bool
 	/* Channels from comsManager */
-	OrderFromMeChan  		chan Order_t	
-	OrderToMeChan			chan Order_t
-	RequestScoreChan		chan Order_t
-	RespondScoreChan		chan Order_t
-	NetOrderUpdateChan	chan Order_t
+	AuctionOrder		chan Order_t
+	RequestScoreChan	chan Order_t
+	RespondScoreChan	chan int
+	AddOrder 			chan Order_t	
+	SendOrderUpdate 	chan Order_t
+	RecvOrderUpdate 	chan Message
 	/* Channels from driver */
-   ButtonChan        <-chan Button
-   SetLightChan      chan<- Light_t
+	ButtonChan        <-chan Button
+	SetLightChan      chan<- Light_t
 }
 
 type Drivers_ExtComs_s struct{
 	/* Channels initialized in driver */
-   ButtonChan 			<-chan Button
+	ButtonChan 			<-chan Button
 	SensorChan 			<-chan int
 	StopButtonChan 	<-chan bool
 	ObsChan 				<-chan bool
@@ -124,8 +116,9 @@ type Fsm_ExtComs_s struct{
 type Message struct{
 	To string
 	From string //ipAdr
-	Msg_type string //order, deadElev, auction, connect to me
+	Type string //order, deadElev, auction, connect to me
 	Payload string
+	Cost int
 	Order Order_t
 }
 

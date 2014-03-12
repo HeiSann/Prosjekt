@@ -5,6 +5,7 @@ import(
 	"strings"	
 	"elevTypes"
 	"time"
+	"encoding/json"
 )
 const SLEEPTIME = 5
 const CON_ATMPTS = 10
@@ -53,10 +54,13 @@ func (toComsMan *ElevNet_s) listenForTcpMsg (con net.Conn){
 	    if err!=nil {
 			//fmt.Println("error in listen")			
 		}else{
-			msg:=bytestream2message(bstream)
+			var msg elevTypes.Message
+			err := json.Unmarshal(bstream, &msg)
+			if err == nil{
 			toComsMan.ExtComs.RecvMsg<-msg
-		}
-	   time.Sleep(time.Millisecond*SLEEPTIME)
+			}
+	}	
+   time.Sleep(time.Millisecond*SLEEPTIME)
 	}
 }
 
@@ -79,7 +83,7 @@ func (toManager *InternalChan_s)listenTcpCon(){
 
 func SendTcpMsg(msg elevTypes.Message, tcpConnections map[string]net.Conn){
 	ipAddr := msg.To
-	bstream:=message2bytestream(msg)
+	bstream, _ := json.Marshal(msg)
 	con, ok :=tcpConnections[ipAddr]
 	switch ok{
 	case true:

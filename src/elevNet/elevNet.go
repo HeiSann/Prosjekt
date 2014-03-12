@@ -1,7 +1,7 @@
 package elevNet
 import("net"
 		"elevTypes"
-		"strings"
+		//"strings"
 		)
 
 
@@ -59,7 +59,7 @@ func InternalChannelsInit()InternalChan_s{
 	return internalChan
 }
 
-
+/*
 //not generic, could use reflect...
 func message2bytestream (m elevTypes.Message) []byte{
 	msg := m.To +"~"+m.From +"~"+ m.Msg_type +"~"+ m.Payload
@@ -72,4 +72,5 @@ func bytestream2message(m []byte) elevTypes.Message{
 	msg_array := strings.Split(msg_string, "~")
 	msg := elevTypes.Message{msg_array[0], msg_array[1], msg_array[2], msg_array[3]}
 	return msg
-}
+}*/
+

@@ -2,6 +2,8 @@ package elevNet
 
 import (
 	"net"	
+	"encoding/json"
+	"elevTypes"
 )
 
 const UDP_PORT ="20000"//All Elevs listen to this Broadcast Port
@@ -17,8 +19,8 @@ func (fromComs *ElevNet_s) SendMsgToAll(){
 	
 	for {
 		msg:=<-fromComs.ExtComs.SendBcast
-		bstream:=message2bytestream(msg)
-		con.Write(bstream)
+		b, _ := json.Marshal(msg)
+		con.Write(b)
 	}		
 }
 
@@ -40,8 +42,11 @@ func (toComs *ElevNet_s)ListenToBroadcast() {
     		if err != nil { return }
 		
     		if remoteAddr.IP.String() != myIp {
-					msg:=bytestream2message(buf)
-    	    		toComs.ExtComs.RecvMsg<-msg
+					var msg elevTypes.Message
+					err := json.Unmarshal(buf, &msg)
+					if err ==nil{
+						toComs.ExtComs.RecvMsg<-msg
+					}
     		}       
       }	
 }

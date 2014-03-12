@@ -1,7 +1,7 @@
 package comsManager
 
 import ("fmt"
-		//"time"
+		"time"
 		"elevTypes"
 		)
 
@@ -10,10 +10,10 @@ import ("fmt"
 
 func (comsMan *ComsManager_s)RecieveMessageFromNet(){
     for{
-        msg:=<-fromNet.ExtComs.RecvMsg
+        msg:=<-comsMan.ExtComs.RecvMsg
         
     
-        switch msg.Msg_type{
+        switch msg.Type{
 		  case "test":
 				fmt.Println("tcp msg recieved")
 				comsMan.TcpSenderTest(msg.From)
@@ -28,7 +28,7 @@ func (comsMan *ComsManager_s)RecieveMessageFromNet(){
 		  		//send cost function and the order it relates to. JSON for order send?? 
 
 		  case "ADD_ORDER":
-		  		comsMan.ExtComs.AddOrder<-msg.order
+		  		comsMan.ExtComs.AddOrder<-msg.Order
 
 		  case "UPDATE_BACKUP":
 				comsMan.ExtComs.RecvOrderUpdate<-msg
@@ -48,29 +48,23 @@ func (comsMan *ComsManager_s)RecieveMessageFromNet(){
     }
 }
 
-func (toNet *ComsManager_s)TcpSenderTest(to string){
+func (self *ComsManager_s)TcpSenderTest(to string){
         msg:=elevTypes.Message{}
         msg.From= "129.241.187.156"
         msg.To= to
-        msg.Msg_type="test"
-        toNet.ExtComs.SendMsg<-msg 
+        msg.Type="test"
+        self.ExtComs.SendMsg<-msg 
 }
 
-func (from Order_s)OrderComs(){
 
-    for{
-        select{
-        
-		case msg:=<-orderDone:
-		//send msg to tcp
+func (self *ComsManager_s)ForwardMessageFromOrder(){
+	for{
+		select{
+		case order:=<- self.ExtComs.SendOrderUpdate:
+			msg:=constructUpdateMsg(self.Ip, order, self.Ip)
+			self.ExtComs.SendMsgToAll<-msg
+			time.Sleep(time.Millisecond*SELECT_SLEEP_TIME)
 		}
-	}
-}
-func (toNet *ComsManager_s)SendMessagesToNet(){
+	}	
 }
 
-func (fromOrder *ComsManager_s)ForwardMessageFromOrder(){
-}
-
-func(toOrder *ComsManager_s)DeliverMessageToOrder(){
-}

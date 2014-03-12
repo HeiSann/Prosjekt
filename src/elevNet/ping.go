@@ -102,7 +102,11 @@ func (ToRefresh *InternalChan_s) pingTimer(){
 }
 
 func ConstructPing(ipTo string, ipFrom string)elevTypes.Message{
-    return elevTypes.Message{ipTo, ipFrom, "PING", ""}
+    msg:=elevTypes.Message{}
+	msg.To =ipTo
+	msg.From=ipFrom
+	msg.Type ="PING"
+	return msg
 }
 
 	

@@ -13,22 +13,22 @@ type ComsManager_s struct{
 
     
 type InternalChan_s struct{
-	auctionWinner chan string
-	newCostMsg chan elevTypes.Message
-	toAuction chan elevTypes.Message
-   auctionDone chan elevTypes.Message
-   costMsg chan elevTypes.Message
+	auctionWinner 	chan string
+	newCostMsg 		chan elevTypes.Message
+	toAuction 		chan elevTypes.Message
+    auctionDone 	chan string
+    costMsg 		chan elevTypes.Message
 	
 }
 
 
 func InternalChannelsInit()InternalChan_s{
 	intChans:=InternalChan_s{}
-	intChans.auctionWinner=make(chan string)
-	intChans.newCostMsg = make(chan elevTypes.Message)
-	intChans.toAuction = make(chan elevTypes.Message)
-	intChans.auctionDone = make(chan elevTypes.Message)
-	intChans.costMsg = make(chan elevTypes.Message)
+	intChans.auctionWinner	= make(chan string)
+	intChans.newCostMsg 	= make(chan elevTypes.Message)
+	intChans.toAuction 		= make(chan elevTypes.Message)
+	intChans.auctionDone 	= make(chan string)
+	intChans.costMsg 		= make(chan elevTypes.Message)
 	
 	
 	return intChans
@@ -41,20 +41,19 @@ func ExternalChannelsInit(net elevTypes.Net_ExtComs_s)elevTypes.ComsManager_ExtC
 	extChans.PingMsg=net.PingMsg
 	extChans.SendMsg=net.SendMsg
 	//communication to order
-	extChans.RequestCost chan int
-	extChans.RecvCost chan int
-	extChans.AuctionOrder chan elevTypes.Order_t
-	extChans.AddOrder chan elevTypes.Order_t
-	extChans.SendOrderUpdate chan elevTypes.Order_t
-	extChans.RecvOrderUpdate chan elevTypes.Order_t
-	
+	extChans.RequestCost = make(chan elevTypes.Order_t)
+	extChans.RecvCost = make(chan int)
+	extChans.AuctionOrder = make(chan elevTypes.Order_t)
+	extChans.AddOrder = make(chan elevTypes.Order_t)
+	extChans.SendOrderUpdate = make(chan elevTypes.Order_t)
+	extChans.RecvOrderUpdate = make(chan elevTypes.Message)
 	return extChans
 
 }
 
 func Init(ip string, net elevTypes.Net_ExtComs_s)ComsManager_s{
- 	Ip :=ip
-	comsMan := ComsManager_s{}	
+ 	comsMan := ComsManager_s{}	
+	comsMan.Ip =ip	
 	comsMan.ExtComs=ExternalChannelsInit(net)
 	comsMan.intComs=InternalChannelsInit()
 	return comsMan

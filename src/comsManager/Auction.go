@@ -2,6 +2,7 @@ package comsManager
 
 import ("elevTypes"
 		"time"
+		"strconv"
 		)
 
 
@@ -9,27 +10,27 @@ const SELECT_SLEEP_TIME = 1
 const AUCTION_DURATION = 30
 		
 
-func (coms *ComsManager_s)getMyCost(order elevTypes.Order_t)int{ //do this need to be in order maybe
-	coms.ExtComs.RequestCost<-order
-	cost:=<-coms.ExtComs.RecvOrder
+func (self *ComsManager_s)getMyCost(order elevTypes.Order_t)int{ //do this need to be in order maybe
+	self.ExtComs.RequestCost<-order
+	cost:=<-self.ExtComs.RecvCost
     return cost
 }
 
 
-func (coms *ComsManager_s)manageAuction(){
+func (self *ComsManager_s)manageAuction(){
 
 	for{
-		order:=<-coms.ExtComs.AuctionOrder:
-		go fromOrder.intComs.auction(order)
+		order:=<-self.ExtComs.AuctionOrder
+		go self.auction(order)
 Auction:
 		for{
 			select{			
-			case cost:=<-coms.intComs.costMsg:
-				if cost.Order.Direction=order.Direction && cost.Order.Floor==order.Floor{
-					coms.intComs.newCostMsg<-cost
+			case costMsg:=<-self.intComs.costMsg:
+				if (costMsg.Order.Direction==order.Direction) && (costMsg.Order.Floor==order.Floor){
+					self.intComs.newCostMsg<-costMsg
 				}//check if correct order 
-			case winner:=<-coms.intComs.auctionDone:
-				HandleAuctionWinner(winner, order)
+			case winner:=<-self.intComs.auctionDone:
+				self.HandleAuctionWinner(winner, order)
 				break Auction
 
 			default:
@@ -39,52 +40,54 @@ Auction:
 	}		
 }
 
-func (intChans *InternalChan_s)auction(order elevTypes.Order_t){
+func (coms *ComsManager_s)auction(order elevTypes.Order_t){
     limit:=time.Now().Add(AUCTION_DURATION)
-    cost:=getMyCost(order)
-	winner:="my ip";
+    cost:=coms.getMyCost(order)
+	winner:="MY_IP"
 	for{
 	    currentTime:=time.Now()
 	    if currentTime.After(limit){
 	        break
 	    }
 	    select{
-		case msg:=<-intChans.newCostMsg:
-		    if msg.Payload<cost{
-		        cost=msg.payload
+		case msg:=<-coms.intComs.newCostMsg:
+			temp,_:=strconv.Atoi(msg.Payload)
+		    if temp<cost{
+				cost=temp
 		        winner=msg.From	
 		   	} //payload=int, trouble with message type		
 		default:
 		    time.Sleep(time.Millisecond*SELECT_SLEEP_TIME)
 		}//end select
       }//end for
-	intChans.auctionDone<-winner
+	coms.intComs.auctionDone<-winner
 }
 
-func (coms *ComsManager_s)HandleAuctionWinner(winner string, order elevTypes.oder_t ){ //needs to know winner IP and order(if self winner, just send order directly to order module). Sends TCP to winner, and waits for ack. If no ack recieved, take the order. 
-	if winner==ComsManager.Ip{
-		coms.ExtComs.addOrder<-order
+func (self *ComsManager_s)HandleAuctionWinner(winner string, order elevTypes.Order_t ){ //needs to know winner IP and order(if self winner, just send order directly to order module). Sends TCP to winner, and waits for ack. If no ack recieved, take the order. 
+	if winner==self.Ip{
+		self.ExtComs.AddOrder<-order
 	}
-	toAll= constructUpdateMsg(winner,order)
-	coms.ExtComs.SendMsgToAll<-toAll	
-	msg:=constructNotifyWinnerMsg(winner,order)
-	coms.ExtComs.SendMsg<-msg
+	toAll := constructUpdateMsg(self.Ip ,order,winner)
+	self.ExtComs.SendMsgToAll<-toAll	
+	msg:= constructNewOrderMsg(winner,self.Ip, order)
+	self.ExtComs.SendMsg<-msg
 	
 }	
 
 
-func constructUpdateMsg(winner string, order elevTypes.Order)elevTypes.Message{
+func constructUpdateMsg(myIp string, order elevTypes.Order_t, actionElev string)elevTypes.Message{
 	msg:=elevTypes.Message{}
-	msg.From=ComsMan.Ip
+	msg.From=myIp
 	msg.Type="UPDATE_BACKUP"
-	msg.Payload = winner
+	msg.Payload = actionElev
 	msg.Order = order	 
+	return msg
 }
 
-func constructNewOrderMsg(ToIpadr string, order elevTypes.Order)elevTypes.Message(
+func constructNewOrderMsg(ToIpadr string, myIp string, order elevTypes.Order_t)elevTypes.Message{
 	msg:=elevTypes.Message{} 
 	msg.To=ToIpadr
-	msg.From = ComsManager.Ip
+	msg.From = myIp
 	msg.Type = "ADD_ORDER" 
    	msg.Order= order
 	return msg

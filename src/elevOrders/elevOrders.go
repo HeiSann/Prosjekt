@@ -3,8 +3,11 @@ package elevOrders
 import(
    "fmt"
 	"time"
-   "elevTypes"
+	"math"
+	"elevTypes"
 )
+
+const MY_IP = "1.1.1.1"
 
 type Orders_s struct{
 	queues			map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool
@@ -15,8 +18,9 @@ type Orders_s struct{
 func Init(driver elevTypes.Drivers_ExtComs_s) Orders_s{
 	fmt.Println("elevOrders.init()...")
    
-	table := make(map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool)
-	table["MY_IP"] = [elevTypes.N_FLOORS][elevTypes.N_DIR]bool
+	tableMap := make(map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool)
+	var table [elevTypes.N_FLOORS][elevTypes.N_DIR] bool
+	tableMap["MY_IP"] = table
 
 	var extcoms = elevTypes.Orders_ExtComs_s{}
 
@@ -29,7 +33,7 @@ func Init(driver elevTypes.Drivers_ExtComs_s) Orders_s{
 	extcoms.ExecResponseChan	= make(chan bool)
 	extcoms.EmgTriggerdChan  	= make(chan bool)
 
-	orders := Orders_s{table, false, extcoms}
+	orders := Orders_s{tableMap, false, extcoms}
 
 	go orders.orderHandler()
 
@@ -41,28 +45,30 @@ func (self *Orders_s)orderHandler(){
 	for{
 		select{
 		/* from ComHandler */
-		case order:= <-self.ExtComs.OrderToMeChan:	
-			self.update_queue(order, "MY_IP")
+		case msg:= <-self.ExtComs.RecvOrderUpdate:	
+			self.update_queue(msg.Order, msg.Payload)
 			//send ACK?
 
-		//case order:= <-self.ExtComs.RequestScoreChan:
-			//score := self.getScore(order) 
-			//self.ExtComs.RespondScoreChan <- score
+		case order:= <-self.ExtComs.RequestScoreChan:
+			//get elevPos
+			elevPos := elevTypes.ElevPos_t{}
+			score := getScore(order, elevPos, self.queues[MY_IP]) 
+			self.ExtComs.RespondScoreChan <- score
 
 		/* from FSM */
 		case order:= <-self.ExtComs.ExecdOrderChan:
 			fmt.Println("orders.orderHandler: got execdOrder: ", order)
-			self.update_queue(order, "MY_IP")
+			self.update_queue(order, MY_IP)
 			self.ExtComs.SendOrderUpdate <- order
-			nextOrder:= get_next_order(self.queues["MY_IP"], order)
-			if nextOrder.Status{
+			nextOrder:= get_next_order(self.queues[MY_IP], order)
+			if nextOrder.Active{
 			    self.ExtComs.NewOrdersChan <- nextOrder
 			    fmt.Println("orders.orderHandler: next order sendt to fsm: ", nextOrder)
 			}
 
 		case order:= <-self.ExtComs.ExecRequestChan:
 			fmt.Println("orders.orderHandler: got execRequest: ", order)
-			shouldExec := self.doesExist(order)
+			shouldExec := doesExist(order, self.queues[MY_IP])
 			if shouldExec{
 			    fmt.Println("orders.orderHandler: sending true on execResponse ")
 				self.ExtComs.ExecResponseChan <- true
@@ -72,21 +78,24 @@ func (self *Orders_s)orderHandler(){
 
 		case self.emg =<-self.ExtComs.EmgTriggerdChan:
 			
-		case msg <-self.ExtComs.RecvOrderUpdate:
-			self.update_queue(msg.Order, )
+		case msg:= <-self.ExtComs.RecvOrderUpdate:
+			self.update_queue(msg.Order, msg.Payload)
 	
 		/* from driver */
 		case button := <-self.ExtComs.ButtonChan:
 			fmt.Println("order.orderHandler: got button press!", button)
 			order := elevTypes.Order_t{button.Floor, button.Dir, true}
-			self.update_queue(order)
+			if order.Direction == elevTypes.NONE{
+				self.update_queue(order, MY_IP)
+			} else{
+			self.ExtComs.AuctionOrder <- order
+			}
 		}
 		time.Sleep(time.Millisecond*elevTypes.SLOW_DOWM_MUTHA_FUKKA)
 	}
 }
 
-func (self *Orders_s)doesExist(order elevTypes.Order_t) bool{
-	queue = queues["MY_IP"]
+func doesExist(order elevTypes.Order_t, queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool) bool{
     switch(order.Direction){
         case elevTypes.UP:
             return queue[order.Floor][elevTypes.UP] || queue[order.Floor][elevTypes.NONE]
@@ -104,30 +113,30 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 	fmt.Println("orders.updating_queue: ", order)
 	wasEmpty := self.isQueueEmpty()	
 	queue := self.queues[IP]
-	switch(order.Status)
-		case elevTypes.Active:
-			queue[order.Floor][order.Direction] = order.Status
+	switch(order.Active){
+		case true:
+			queue[order.Floor][order.Direction] = order.Active
 			self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, true}
 			fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
-		case elevTypes.Execd:
+		case false:
 			if order.Direction == elevTypes.NONE{
-				queue[order.Floor][elevTypes.UP] = order.Status
-			 	queue[order.Floor][elevTypes.DOWN] = order.Status
-			 	queue[order.Floor][elevTypes.NONE] = order.Status
+				queue[order.Floor][elevTypes.UP] = order.Active
+			 	queue[order.Floor][elevTypes.DOWN] = order.Active
+			 	queue[order.Floor][elevTypes.NONE] = order.Active
 			 	
 			 	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.UP, false}
 			 	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.DOWN, false}
 			 	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
 			 }else{		
-				queue[order.Floor][elevTypes.NONE] = order.Status
-				queue[order.Floor][order.Direction] = order.Status
+				queue[order.Floor][elevTypes.NONE] = order.Active
+				queue[order.Floor][order.Direction] = order.Active
 				self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
 				fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, elevTypes.NONE, false})
 				self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, false}
 				fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, false})
 			}
 	}
-	self.queues = queue
+	self.queues[IP] = queue
 	//fmt.Println("queue value set OK!")
 	if wasEmpty{
 		fmt.Println("orders.update_queue: sending order to fsm on NewOrderChan!")
@@ -138,7 +147,7 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 
 func (self *Orders_s)isQueueEmpty() bool{
 	fmt.Println("Checking queue...")
-	queue:= queues["MY_IP"]
+	queue:= self.queues[MY_IP]
 	for floor:=0; floor< elevTypes.N_FLOORS; floor++{
 		for dir:=0; dir< elevTypes.N_DIR; dir++{
 			if	queue[floor][dir] == true{
@@ -194,17 +203,17 @@ func get_next_order(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool,order elevTy
     switch(order.Direction){
         case elevTypes.UP:
             order_up_above := next_order_above(order.Floor, queue)
-            if order_up_above.Status { 
+            if order_up_above.Active { 
                 fmt.Println("order.get_next_order: returning order_up_above: ", order_up_above)
                 return order_up_above }
             
             order_down := next_order_below(elevTypes.N_FLOORS-1, queue)
-            if order_down.Status { 
+            if order_down.Active { 
                 fmt.Println("order.get_next_order: returning order_down: ", order_down)
                 return order_down }
             
             order_up_below := next_order_above(0, queue)
-            if order_up_below.Status { 
+            if order_up_below.Active { 
                 fmt.Println("order.get_next_order: returning order_up_below: ", order_up_below)
                 return order_up_below }
             
@@ -213,17 +222,17 @@ func get_next_order(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool,order elevTy
             
         case elevTypes.DOWN:
             order_down_below := next_order_below(order.Floor, queue)
-            if order_down_below.Status { 
+            if order_down_below.Active { 
                 fmt.Println("order.get_next_order: returning order_down_below: ", order_down_below)
                 return order_down_below }
             
             order_up_below := next_order_above(0, queue)
-            if order_up_below.Status{ 
+            if order_up_below.Active{ 
                 fmt.Println("order.get_next_order: returning order_up_below: ", order_up_below)
                 return order_up_below }
             
             order_down_above := next_order_below(elevTypes.N_FLOORS-1, queue)
-            if order_down_above.Status{ 
+            if order_down_above.Active{ 
                 fmt.Println("order.get_next_order: returning order_down_above: ", order_down_above)
                 return order_down_above}
              
@@ -239,39 +248,57 @@ func get_next_order(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool,order elevTy
 func clear_list(){
 }
 
-func getScore(order elevTypes.Order_t, elev elevTypes.Order_t) int{
-    order_already_added := does_exist(order)
+func countOrders(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool) int{
+	count := 0
+	for floor:=0; floor< elevTypes.N_FLOORS; floor++{
+		for dir:=0; dir< elevTypes.N_DIR; dir++{
+			if	queue[floor][dir] == true{
+				count ++
+			}
+		}
+	}
+	return count
+}
+
+
+func getScore(order elevTypes.Order_t, elev elevTypes.ElevPos_t, queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool) int{
+    order_already_added := doesExist(order, queue) 
+	n_order := countOrders(queue)
     //Empty queue
-    if elev.Direction == elevTypes.NONE
-        return 0 + abs(order.Floor-elev.Floor);
-        
-    //Existing identical order
-    elseif order_already_added
-        return elevTypes.N_FLOORS + abs(order.Floor-elev.Floor)
+    if elev.Direction == elevTypes.NONE{
+		ansFloat := float64(order.Floor) - float64(elev.Floor)
+		return 0 + int(math.Abs(ansFloat))
+
+	//Existing identical order
+    }else if order_already_added{
+		ansFloat := float64(order.Floor) - float64(elev.Floor)
+        return elevTypes.N_FLOORS + int(math.Abs(ansFloat))
         
     //Order in same direction, infront of the elevator
-    elseif (elev.Direction == order.Direction) && (order.Floor>elev.Floor) && (order.Direction==elevTypes.UP)
+    }else if (elev.Direction == order.Direction) && (order.Floor>elev.Floor) && (order.Direction==elevTypes.UP){
         return 2*elevTypes.N_FLOORS + order.Floor-elev.Floor + 2*n_order
-    elseif (elev.Direction == order.Direction) && (order.Floor<elev.Floor) && (order.Direction==elevTypes.DOWN)
+    }else if (elev.Direction == order.Direction) && (order.Floor<elev.Floor) && (order.Direction==elevTypes.DOWN){
         return 2*elevTypes.N_FLOORS + elev.Floor-order.Floor + 2*n_order
         
     //Order in opposite direction infront of elevator
-    elseif (elev.Direction ~= order.Direction) && (order.Floor>elev.Floor) && (order.Direction==elevTypes.UP)
+    }else if  (elev.Direction != order.Direction) && (order.Floor>elev.Floor) && (order.Direction==elevTypes.UP){
         return 5*elevTypes.N_FLOORS + order.Floor-elev.Floor + 2*n_order
-    elseif (elev.Direction ~= order.Direction) && (order.Floor<elev.Floor) && (order.Direction==elevTypes.DOWN)
+    }else if (elev.Direction != order.Direction) && (order.Floor<elev.Floor) && (order.Direction==elevTypes.DOWN){
         return 5*elevTypes.N_FLOORS + elev.Floor-order.Floor + 2*n_order
         
     //Order in opposite direction behind the elevator
-    elseif (elev.Direction ~= order.Direction) && (order.Floor>elev.Floor) && (order.Direction==elevTypes.UP)
+    }else if (elev.Direction != order.Direction) && (order.Floor>elev.Floor) && (order.Direction==elevTypes.UP){
         return 8*elevTypes.N_FLOORS + order.Floor-elev.Floor + 2*n_order
-    elseif (elev.Direction ~= order.Direction) && (order.Floor<elev.Floor) && (order.Direction==elevTypes.DOWN)
+    }else if (elev.Direction != order.Direction) && (order.Floor<elev.Floor) && (order.Direction==elevTypes.DOWN){
         return 8*elevTypes.N_FLOORS + elev.Floor-order.Floor + 2*n_order
         
     //Order in same direction behind the elevator
-    elseif (elev.Direction == order.Direction) && (order.Floor<elev.Floor) && (order.Direction==elevTypes.UP)
+    }else if (elev.Direction == order.Direction) && (order.Floor<elev.Floor) && (order.Direction==elevTypes.UP){
         return 11*elevTypes.N_FLOORS + elev.Floor-order.Floor + 2*n_order
-    elseif (elev.Direction == order.Direction) && (order.Floor>elev.Floor) && (order.Direction==elevTypes.DOWN)
+    }else if  (elev.Direction == order.Direction) && (order.Floor>elev.Floor) && (order.Direction==elevTypes.DOWN){
         return 11*elevTypes.N_FLOORS + order.Floor-elev.Floor + 2*n_order
     }
+	//this shouldn't happen
+	return 255
 }
 
