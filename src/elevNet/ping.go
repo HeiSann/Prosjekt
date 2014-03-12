@@ -17,6 +17,7 @@ func (elevNet *ElevNet_s) RefreshNetwork(){
 	elevPingTimes:=make(map[string]time.Time)
 	go elevNet.intComs.pingTimer()
 	go elevNet.BroadCastPing()
+	
     for{
         select{
     /*
@@ -83,6 +84,7 @@ func (toNet *ElevNet_s) BroadCastPing(){
 	for{	
 		msg:=ConstructPing(destIp,myIp)
 		toNet.ExtComs.SendBcast<-msg
+		fmt.Println("bcast sendt")
 		time.Sleep(time.Millisecond*SLEEP_TIME)
 	}
 		//construct Ping msg and broadcast denne må gjennom coms manager
