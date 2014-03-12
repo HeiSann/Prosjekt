@@ -38,12 +38,12 @@ func (toComs *ElevNet_s)ListenToBroadcast() {
 	buf := make([]byte,255)
  
   	for {
-  	    _, remoteAddr, err := psock.ReadFromUDP(buf[0:])
+  	    n, remoteAddr, err := psock.ReadFromUDP(buf[0:])
     		if err != nil { return }
 		
     		if remoteAddr.IP.String() != myIp {
 					var msg elevTypes.Message
-					err := json.Unmarshal(buf, &msg)
+					err := json.Unmarshal(buf[0:n], &msg)
 					if err ==nil{
 						toComs.ExtComs.RecvMsg<-msg
 					}

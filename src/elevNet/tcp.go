@@ -50,12 +50,12 @@ func (elevNet *ElevNet_s)ManageTCPCom(){
 func (toComsMan *ElevNet_s) listenForTcpMsg (con net.Conn){
 	bstream := make([]byte, BUFF_SIZE)
     for {
-		_, err := con.Read(bstream[0:])
+		n, _, err := con.Read(bstream[0:])
 	    if err!=nil {
 			//fmt.Println("error in listen")			
 		}else{
 			var msg elevTypes.Message
-			err := json.Unmarshal(bstream, &msg)
+			err := json.Unmarshal(bstream[0:n], &msg)
 			if err == nil{
 			toComsMan.ExtComs.RecvMsg<-msg
 			}

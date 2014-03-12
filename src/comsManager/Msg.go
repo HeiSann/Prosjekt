@@ -18,7 +18,7 @@ func (comsMan *ComsManager_s)RecieveMessageFromNet(){
 				fmt.Println("tcp msg recieved")
 				comsMan.TcpSenderTest(msg.From)
 				
-		  case "HEARTBEAT":
+		  case "PING":
 		  		comsMan.ExtComs.PingMsg<-msg
 
 		  case "COST":
