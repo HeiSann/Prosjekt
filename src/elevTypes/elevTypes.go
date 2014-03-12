@@ -24,6 +24,12 @@ type Light_t struct{
    Set      	bool
 }
 
+type Status_t int 
+const (
+    Pending Status_t = iota
+    Execd
+)
+
 type Order_t struct{
    Floor       int
    Direction   Direction_t   
@@ -54,7 +60,8 @@ type ComsManager_ExtComs_s struct{
 	RequestCost chan Order_t
 	RecvCost chan int
 	AddOrder chan Order_t
-	UpdateBackup chan Order_t
+	SendOrderUpdate chan Order_t
+	RecvOrderUpdate chan Message
       
    	
 	/*inited in net*/

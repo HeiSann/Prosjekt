@@ -61,14 +61,14 @@ func (intChans *InternalChan_s)auction(order elevTypes.Order_t){
 	intChans.auctionDone<-winner
 }
 
-func HandleAuctionWinner(winner string, order elevTypes.oder_t ){ //needs to know winner IP and order(if self winner, just send order directly to order module). Sends TCP to winner, and waits for ack. If no ack recieved, take the order. 
+func (coms *ComsManager_s)HandleAuctionWinner(winner string, order elevTypes.oder_t ){ //needs to know winner IP and order(if self winner, just send order directly to order module). Sends TCP to winner, and waits for ack. If no ack recieved, take the order. 
 	if winner==ComsManager.Ip{
-		addOrder<-order
+		coms.ExtComs.addOrder<-order
 	}
 	toAll= constructUpdateMsg(winner,order)
-	SendMsgToAll<-toAll	
+	coms.ExtComs.SendMsgToAll<-toAll	
 	msg:=constructNotifyWinnerMsg(winner,order)
-	SendMsg<-msg
+	coms.ExtComs.SendMsg<-msg
 	
 }	
 

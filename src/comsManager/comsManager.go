@@ -45,7 +45,8 @@ func ExternalChannelsInit(net elevTypes.Net_ExtComs_s)elevTypes.ComsManager_ExtC
 	extChans.RecvCost chan int
 	extChans.AuctionOrder chan elevTypes.Order_t
 	extChans.AddOrder chan elevTypes.Order_t
-	extChans.UpdateBackup chan elevTypes.Order_t
+	extChans.SendOrderUpdate chan elevTypes.Order_t
+	extChans.RecvOrderUpdate chan elevTypes.Order_t
 	
 	return extChans
 

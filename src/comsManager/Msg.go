@@ -31,7 +31,7 @@ func (comsMan *ComsManager_s)RecieveMessageFromNet(){
 		  		comsMan.ExtComs.AddOrder<-msg.order
 
 		  case "UPDATE_BACKUP":
-				comsMan.ExtComs.UpdateBackup<-msg
+				comsMan.ExtComs.RecvOrderUpdate<-msg
 
 		  case "DEAD ELEVATOR":
 		  //broadcast the ip. Start auctioning the dead elevators external orders
@@ -56,21 +56,16 @@ func (toNet *ComsManager_s)TcpSenderTest(to string){
         toNet.ExtComs.SendMsg<-msg 
 }
 
-/*
 func (from Order_s)OrderComs(){
 
     for{
         select{
-        case msg:=<-ExtComs.ExternalOrder:
-			//start goroutine for auction
-		case msg:=<-intComs.newOrder:
-		case msg:=<-myComst:
+        
 		case msg:=<-orderDone:
-		case msg:=<-bcastAuction:
+		//send msg to tcp
 		}
 	}
 }
-*/
 func (toNet *ComsManager_s)SendMessagesToNet(){
 }
 

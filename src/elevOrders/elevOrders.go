@@ -7,16 +7,16 @@ import(
 )
 
 type Orders_s struct{
-   queue          [elevTypes.N_FLOORS][elevTypes.N_DIR]bool
-	//netQueues		map{string}[][]bool
+	queues			map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool
 	emg				bool
-   ExtComs			elevTypes.Orders_ExtComs_s
+	ExtComs			elevTypes.Orders_ExtComs_s
 }
 
 func Init(driver elevTypes.Drivers_ExtComs_s) Orders_s{
-   fmt.Println("elevOrders.init()...")
+	fmt.Println("elevOrders.init()...")
    
-   var table [elevTypes.N_FLOORS][elevTypes.N_DIR]bool
+	table := make(map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool)
+	table["MY_IP"] = [elevTypes.N_FLOORS][elevTypes.N_DIR]bool
 
 	var extcoms = elevTypes.Orders_ExtComs_s{}
 
@@ -42,7 +42,7 @@ func (self *Orders_s)orderHandler(){
 		select{
 		/* from ComHandler */
 		case order:= <-self.ExtComs.OrderToMeChan:	
-			self.update_queue(order)
+			self.update_queue(order, "MY_IP")
 			//send ACK?
 
 		//case order:= <-self.ExtComs.RequestScoreChan:
@@ -52,9 +52,9 @@ func (self *Orders_s)orderHandler(){
 		/* from FSM */
 		case order:= <-self.ExtComs.ExecdOrderChan:
 			fmt.Println("orders.orderHandler: got execdOrder: ", order)
-			self.update_queue(order)
-			//ExtComs.OrderToNetChan <- order
-			nextOrder:= get_next_order(self.queue, order)
+			self.update_queue(order, "MY_IP")
+			self.ExtComs.SendOrderUpdate <- order
+			nextOrder:= get_next_order(self.queues["MY_IP"], order)
 			if nextOrder.Status{
 			    self.ExtComs.NewOrdersChan <- nextOrder
 			    fmt.Println("orders.orderHandler: next order sendt to fsm: ", nextOrder)
@@ -71,6 +71,9 @@ func (self *Orders_s)orderHandler(){
 			}
 
 		case self.emg =<-self.ExtComs.EmgTriggerdChan:
+			
+		case msg <-self.ExtComs.RecvOrderUpdate:
+			self.update_queue(msg.Order, )
 	
 		/* from driver */
 		case button := <-self.ExtComs.ButtonChan:
@@ -83,58 +86,62 @@ func (self *Orders_s)orderHandler(){
 }
 
 func (self *Orders_s)doesExist(order elevTypes.Order_t) bool{
+	queue = queues["MY_IP"]
     switch(order.Direction){
         case elevTypes.UP:
-            return self.queue[order.Floor][elevTypes.UP] || self.queue[order.Floor][elevTypes.NONE]
+            return queue[order.Floor][elevTypes.UP] || queue[order.Floor][elevTypes.NONE]
         case elevTypes.DOWN:
-            return self.queue[order.Floor][elevTypes.DOWN] || self.queue[order.Floor][elevTypes.NONE]
+            return queue[order.Floor][elevTypes.DOWN] || queue[order.Floor][elevTypes.NONE]
         case elevTypes.NONE:
             fmt.Println("order.doesExist: order.dir = NONE; this probably shouldn't happen?")
             return true
         default:
-            return self.queue[order.Floor][elevTypes.UP] || self.queue[order.Floor][elevTypes.NONE]|| self.queue[order.Floor][elevTypes.DOWN]
+            return queue[order.Floor][elevTypes.UP] || queue[order.Floor][elevTypes.NONE]|| queue[order.Floor][elevTypes.DOWN]
     }
 }
 
-func (self *Orders_s)update_queue(order elevTypes.Order_t){
+func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 	fmt.Println("orders.updating_queue: ", order)
-	fmt.Println("queue was: ", self.queue)
 	wasEmpty := self.isQueueEmpty()	
-	if order.Status{
-	    self.queue[order.Floor][order.Direction] = order.Status
-	    self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, true}
-	    fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
-	}else{
-		if order.Direction == elevTypes.NONE{
-			self.queue[order.Floor][elevTypes.UP] = order.Status
-	    	self.queue[order.Floor][elevTypes.DOWN] = order.Status
-	    	self.queue[order.Floor][elevTypes.NONE] = order.Status
-	    	
-	    	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.UP, false}
-	    	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.DOWN, false}
-	    	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
-	    }else{		
-			self.queue[order.Floor][elevTypes.NONE] = order.Status
-			self.queue[order.Floor][order.Direction] = order.Status
-			self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
-			fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, elevTypes.NONE, false})
-			self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, false}
-			fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, false})
-		}
+	queue := self.queues[IP]
+	switch(order.Status)
+		case elevTypes.Active:
+			queue[order.Floor][order.Direction] = order.Status
+			self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, true}
+			fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
+		case elevTypes.Execd:
+			if order.Direction == elevTypes.NONE{
+				queue[order.Floor][elevTypes.UP] = order.Status
+			 	queue[order.Floor][elevTypes.DOWN] = order.Status
+			 	queue[order.Floor][elevTypes.NONE] = order.Status
+			 	
+			 	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.UP, false}
+			 	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.DOWN, false}
+			 	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
+			 }else{		
+				queue[order.Floor][elevTypes.NONE] = order.Status
+				queue[order.Floor][order.Direction] = order.Status
+				self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
+				fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, elevTypes.NONE, false})
+				self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, false}
+				fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, false})
+			}
 	}
+	self.queues = queue
 	//fmt.Println("queue value set OK!")
 	if wasEmpty{
 		fmt.Println("orders.update_queue: sending order to fsm on NewOrderChan!")
 		self.ExtComs.NewOrdersChan <- order
 	}
-	fmt.Println("queue is now: ", self.queue)
+	fmt.Println("queue is now: ", queue)
 }
 
 func (self *Orders_s)isQueueEmpty() bool{
 	fmt.Println("Checking queue...")
+	queue:= queues["MY_IP"]
 	for floor:=0; floor< elevTypes.N_FLOORS; floor++{
 		for dir:=0; dir< elevTypes.N_DIR; dir++{
-			if	self.queue[floor][dir] == true{
+			if	queue[floor][dir] == true{
 				fmt.Println("queue not empty!")
 				return false
 			}
