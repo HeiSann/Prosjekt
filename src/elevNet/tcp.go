@@ -50,7 +50,7 @@ func (elevNet *ElevNet_s)ManageTCPCom(){
 func (toComsMan *ElevNet_s) listenForTcpMsg (con net.Conn){
 	bstream := make([]byte, BUFF_SIZE)
     for {
-		n, _, err := con.Read(bstream[0:])
+		n, err := con.Read(bstream[0:])
 	    if err!=nil {
 			//fmt.Println("error in listen")			
 		}else{
