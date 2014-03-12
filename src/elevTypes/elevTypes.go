@@ -30,22 +30,39 @@ type Order_t struct{
    Status      bool
 }
 
+type ElevPos_t struct{
+   Floor       int
+   Direction   Direction_t   
+   Status      bool
+}
+
 type Net_ExtComs_s struct{
    RecvMsg chan Message
 	SendMsg chan Message  
 	SendBcast chan Message
 	PingMsg chan Message
+	SendMsgToAll chan Message
 }
 
 type ComsManager_ExtComs_s struct{
 	/* inited in self */
 	send chan Message
 	//chan to order init here
+    RequestScore chan int
+    RecieveScore chan int
+    AuctionOrder chan Order_t //external oder in elevator. This will star auction
+	RequestCost chan Order_t
+	RecvCost chan int
+	AddOrder chan Order_t
+	UpdateBackup chan Order_t
+      
+   	
 	/*inited in net*/
 	RecvMsg chan Message
 	SendMsg chan Message  
 	SendBcast chan Message
 	PingMsg chan Message
+	SendMsgToAll chan Message
 }
 
 type Orders_ExtComs_s struct{
@@ -102,6 +119,7 @@ type Message struct{
 	From string //ipAdr
 	Msg_type string //order, deadElev, auction, connect to me
 	Payload string
+	Order Order_t
 }
 
    

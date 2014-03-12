@@ -32,9 +32,13 @@ func (elevNet *ElevNet_s)ManageTCPCom(){
 		case msg := <-elevNet.ExtComs.SendMsg:
 			fmt.Println("case send")
 			SendTcpMsg(msg, tcpConnections)
+			
 		case ip := <-elevNet.intComs.deadElev:
         		fmt.Println("case dead")
             deleteCon(ip, tcpConnections)
+            
+        case msg:=<-elevNet.ExtComs.SendMsgToAll:
+        	SendTcpToAll(msg, tcpConnections)
 		default:
 			time.Sleep(time.Millisecond*SLEEPTIME)
 			
@@ -52,7 +56,7 @@ func (toComsMan *ElevNet_s) listenForTcpMsg (con net.Conn){
 			msg:=bytestream2message(bstream)
 			toComsMan.ExtComs.RecvMsg<-msg
 		}
-	time.Sleep(time.Millisecond*SLEEPTIME)
+	   time.Sleep(time.Millisecond*SLEEPTIME)
 	}
 }
 
@@ -89,6 +93,13 @@ func SendTcpMsg(msg elevTypes.Message, tcpConnections map[string]net.Conn){
 		fmt.Println("error, not a connection")
 	}
 }	
+
+func SendTcpToAll(msg elevTypes.Message, tcpConnections map[string]net.Conn){//liker ikke helt at elevNet endrer på ipadressen når coms egentlig skal gjørd det?
+	for ip, _ := range tcpConnections{
+		msg.To=ip
+		SendTcpMsg(msg,tcpConnections)
+	}
+}
 
 
 func (toManager *InternalChan_s)ConnectElev(ipAdr string){
