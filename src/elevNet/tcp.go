@@ -32,7 +32,7 @@ func (elevNet *ElevNet_s)ManageTCPCom(){
 			
 		case msg := <-elevNet.ExtComs.SendMsg:
 			fmt.Println("ManageTcpCom: case send")
-			SendTcpMsg(msg, tcpConnections)
+			go elevNet.intComs.SendTcpMsg(msg, tcpConnections)
 			
 		case ip := <-elevNet.intComs.deadElev:
         		fmt.Println("ManageTCPCom:case dead")
@@ -40,7 +40,7 @@ func (elevNet *ElevNet_s)ManageTCPCom(){
             
         case msg:=<-elevNet.ExtComs.SendMsgToAll:
         	fmt.Println("ManageTCPCom:case sendMsgToAll")
-        	SendTcpToAll(msg, tcpConnections)
+        	elevNet.intComs.SendTcpToAll(msg, tcpConnections)
 		default:
 			time.Sleep(time.Millisecond*SLEEPTIME)
 			
@@ -82,7 +82,7 @@ func (toManager *InternalChan_s)listenTcpCon(){
    	}
 }	
 
-func SendTcpMsg(msg elevTypes.Message, tcpConnections map[string]net.Conn){
+func (toManager *InternalChan_s)SendTcpMsg(msg elevTypes.Message, tcpConnections map[string]net.Conn){
 	ipAddr := msg.To
 	bstream, _ := json.Marshal(msg)
 	con, ok :=tcpConnections[ipAddr]
@@ -95,15 +95,17 @@ func SendTcpMsg(msg elevTypes.Message, tcpConnections map[string]net.Conn){
 			fmt.Println("msg ok")
 		}
 	case false:
-		fmt.Println("error, not a connection")
+		fmt.Println("error, not a connection, trying to connect")
+		toManager.connectToElev<-msg.To
+		
 	}
 }	
 
-func SendTcpToAll(msg elevTypes.Message, tcpConnections map[string]net.Conn){
+func (self *InternalChan_s)SendTcpToAll(msg elevTypes.Message, tcpConnections map[string]net.Conn){
 	for ip, _ := range tcpConnections{
 		msg.To=ip
 		fmt.Println("SendTcpToAll:",ip)
-		SendTcpMsg(msg,tcpConnections)
+		self.SendTcpMsg(msg,tcpConnections)
 	}
 }
 
