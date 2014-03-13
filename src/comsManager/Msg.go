@@ -21,12 +21,12 @@ func (comsMan *ComsManager_s)RecieveMessageFromNet(){
 
 		  case "COST":
 		  		comsMan.intComs.costMsg<-msg
-				fmt.Println("\t RecieveMessegeFromNet: COST;", msg.Cost)
+				fmt.Println("\t RecieveMessegeFromNet: COST;", msg.Payload)
 		  case "NEED_COST":
 		  		cost :=comsMan.getMyCost(msg.Order) //remember if only cost<cost
 		  		costMsg:=constructCostMsg(comsMan.Ip, msg.From, msg.Order, cost)
 		  		comsMan.ExtComs.SendMsg<-costMsg
-		  		fmt.Println("\t sendt my cost to the elevator requiring it",cost)
+		  		fmt.Println("\t sendt my cost to the elevator requiring it")
 		  		
 
 		  case "ADD_ORDER":
