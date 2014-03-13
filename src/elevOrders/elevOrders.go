@@ -33,10 +33,10 @@ func Init(driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManager_ExtComs
 	extcoms.ExecResponseChan	= make(chan bool)
 	extcoms.EmgTriggerdChan  	= make(chan bool)
 	
-	extcoms.AuctionOrder			= coms.AuctionOrder
+	extcoms.AuctionOrder		= coms.AuctionOrder
 	extcoms.RequestScoreChan	= coms.RequestCost
 	extcoms.RespondScoreChan	= coms.RecvCost
-	extcoms.AddOrder 				= coms.AddOrder
+	extcoms.AddOrder 			= coms.AddOrder
 	extcoms.SendOrderUpdate 	= coms.SendOrderUpdate
 	extcoms.RecvOrderUpdate 	= coms.RecvOrderUpdate
 
@@ -61,6 +61,13 @@ func (self *Orders_s)orderHandler(){
 			elevPos := elevTypes.ElevPos_t{}
 			score := getScore(order, elevPos, self.queues[MY_IP]) 
 			self.ExtComs.RespondScoreChan <- score
+			
+		case order:=<-self.ExtComs.AddOrder:
+		    self.update_queue(order, MY_IP)
+		    if self.isQueueEmpty(){
+		        self.ExtComs.NewOrdersChan <- order
+		    }
+		    
 
 		/* from FSM */
 		case order:= <-self.ExtComs.ExecdOrderChan:
@@ -129,14 +136,18 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 			self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, true}
 			fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
 		case false:
-			if order.Direction == elevTypes.NONE{
-				queue[order.Floor][elevTypes.UP] = order.Active
-			 	queue[order.Floor][elevTypes.DOWN] = order.Active
-			 	queue[order.Floor][elevTypes.NONE] = order.Active
-			 	
-			 	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.UP, false}
-			 	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.DOWN, false}
-			 	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
+		    next_order := get_next_order(self.queue[MY_IP], order)
+		    if next_order.Active == false{
+		    
+			else if next_order.Floor== order.floor{  
+				    queue[order.Floor][elevTypes.UP] = false
+			     	queue[order.Floor][elevTypes.DOWN] = false
+			     	queue[order.Floor][elevTypes.NONE] = false
+			     	//TODO: notify comsmanager of double expedition
+			     	
+			     	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.UP, false}
+			     	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.DOWN, false}
+			     	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
 			 }else{		
 				queue[order.Floor][elevTypes.NONE] = order.Active
 				queue[order.Floor][order.Direction] = order.Active
@@ -248,7 +259,7 @@ func get_next_order(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool,order elevTy
              
             /*  no orders left  */
             return elevTypes.Order_t{}
-         default:
+        default:
             fmt.Println("order.get_next_order: dir on request = NONE. this probably shouldn't happen?")
             return elevTypes.Order_t{}
     }
