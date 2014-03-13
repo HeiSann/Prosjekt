@@ -66,7 +66,7 @@ func (self *ComsManager_s)ForwardMessageFromOrder(){
 	for{
 		select{
 		case order:=<- self.ExtComs.SendOrderUpdate:
-			fmt.Println("\t comsManager.ForwardMessageFromOrder: got order: ", order)
+			fmt.Println("\t comsManager.ForwardMessageFromOrder: got order: ", order,"trying to send")
 			msg:=constructUpdateMsg(self.Ip, order, self.Ip)
 			self.ExtComs.SendMsgToAll<-msg
 			fmt.Println("\t comsManager.ForwardMessageFromOrder: sendt msg self.ExtComs.SendMsgToAll<-msg, msg=", msg)
@@ -74,7 +74,7 @@ func (self *ComsManager_s)ForwardMessageFromOrder(){
 			needCostMsg:=constructNeedCostMsg(self.Ip, order)
     		fmt.Println("\t comsManager: costMsg created. Trying to send")
     		self.ExtComs.SendMsgToAll<-needCostMsg
-    		fmt.Println("\t comsManager: send need cost Msg to all tcp elevators")			
+    		fmt.Println("\t comsManager: send need cost Msg to all tcp elevators")		
 		default:
 			time.Sleep(time.Millisecond*SELECT_SLEEP_TIME)
 		}

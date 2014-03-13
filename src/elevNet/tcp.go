@@ -18,27 +18,28 @@ func (elevNet *ElevNet_s)ManageTCPCom(){
 	go elevNet.intComs.listenTcpCon()
 
 	tcpConnections:= make(map[string]net.Conn)
-	
+	fmt.Println("ManageTCPCom channe: ",elevNet.ExtComs.SendMsgToAll)
 	for {	
-		select{
+		select{		
 		
 		case newTcpCon := <-elevNet.intComs.new_conn:
-			fmt.Println("newconn")
+			fmt.Println("ManageTCPCom :newconn")
 			elevNet.registerNewCon(newTcpCon, tcpConnections)
 			
 		case ip := <-elevNet.intComs.connectToElev:
-			fmt.Println("case connetct to")
+			fmt.Println("ManageTCPCom:case connetct to")
 			go elevNet.intComs.ConnectElev(ip)
 			
 		case msg := <-elevNet.ExtComs.SendMsg:
-			fmt.Println("case send")
+			fmt.Println("ManageTcpCom: case send")
 			SendTcpMsg(msg, tcpConnections)
 			
 		case ip := <-elevNet.intComs.deadElev:
-        		fmt.Println("case dead")
+        		fmt.Println("ManageTCPCom:case dead")
             deleteCon(ip, tcpConnections)
             
         case msg:=<-elevNet.ExtComs.SendMsgToAll:
+        	fmt.Println("ManageTCPCom:case sendMsgToAll")
         	SendTcpToAll(msg, tcpConnections)
 		default:
 			time.Sleep(time.Millisecond*SLEEPTIME)
