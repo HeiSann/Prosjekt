@@ -26,7 +26,7 @@ func (comsMan *ComsManager_s)RecieveMessageFromNet(){
 		  		comsMan.intComs.costMsg<-msg
 
 		  case "NEED_COST":
-		  		cost :=comsMan.getMyCost(msg.Order)
+		  		cost :=comsMan.getMyCost(msg.Order) //remember if only cost<cost
 		  		costMsg:=constructCostMsg(comsMan.Ip, msg.From, msg.Order, cost)
 		  		comsMan.ExtComs.SendMsg<-costMsg
 		  		fmt.Println("\t sendt my cost to the elevator requiring it")
@@ -84,5 +84,13 @@ func constructCostMsg(myIp string, toIp string, order elevTypes.Order_t, cost in
 	msg.Type="COST"
 	msg.Payload = strconv.Itoa(cost)
 	msg.Order = order	 
+	return msg
+}
+
+func constructNeedCostMsg(myIP string, order elevTypes.Order_t)elevTypes.Message{
+	msg:=elevTypes.Message{}
+	msg.From = myIP
+	msg.Type = "NEED_COST"
+	msg.Order = order
 	return msg
 }

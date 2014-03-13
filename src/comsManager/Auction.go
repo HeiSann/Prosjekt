@@ -46,6 +46,10 @@ Auction:
 
 func (coms *ComsManager_s)auction(order elevTypes.Order_t){
     limit:=time.Now().Add(AUCTION_DURATION)
+    
+    needCostMsg:=constructNeedCostMsg(coms.Ip, order)
+    coms.ExtComs.SendMsgToAll<-needCostMsg
+    fmt.Println("\t auction: send need cost Msg to all tcp elevators")
     cost:=coms.getMyCost(order)
     fmt.Println(cost) //debug
 	winner:=coms.Ip
