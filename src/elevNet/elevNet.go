@@ -32,6 +32,11 @@ func Init()ElevNet_s{
 	elevNet.Ip=GetMyIP()
 	elevNet.ExtComs=ExternalChannelsInit()
 	elevNet.intComs=InternalChannelsInit()	
+	
+	go elevNet.ListenToBroadcast()
+	go elevNet.ManageTCPCom()
+	go elevNet.RefreshNetwork()
+	
 	return elevNet
 }
 

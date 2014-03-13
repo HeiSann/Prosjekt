@@ -3,10 +3,11 @@ package comsManager
 import ("elevTypes"
 		"time"
 		"strconv"
+		"fmt"
 		)
 
 
-const SELECT_SLEEP_TIME = 1
+const SELECT_SLEEP_TIME = 2
 const AUCTION_DURATION = 30
 		
 
@@ -18,9 +19,9 @@ func (self *ComsManager_s)getMyCost(order elevTypes.Order_t)int{ //do this need 
 
 
 func (self *ComsManager_s)manageAuction(){
-
 	for{
 		order:=<-self.ExtComs.AuctionOrder
+		fmt.Println("manageAuction: recieved up/down order from order module")
 		go self.auction(order)
 Auction:
 		for{
@@ -30,20 +31,24 @@ Auction:
 					self.intComs.newCostMsg<-costMsg
 				}//check if correct order 
 			case winner:=<-self.intComs.auctionDone:
+				fmt.Println("manageAuction recieved winner, started handle", self.intComs.auctionDone)
 				self.HandleAuctionWinner(winner, order)
+				fmt.Println("manageAuction: started handle winner")
 				break Auction
 
 			default:
 				time.Sleep(time.Millisecond*SELECT_SLEEP_TIME)
 			}
 		}
+		fmt.Println("manageAuction: Handle auctionWinner ok, broke out of inner for loop")
 	}		
 }
 
 func (coms *ComsManager_s)auction(order elevTypes.Order_t){
     limit:=time.Now().Add(AUCTION_DURATION)
     cost:=coms.getMyCost(order)
-	winner:="MY_IP"
+    fmt.Println(cost) //debug
+	winner:=coms.Ip
 	for{
 	    currentTime:=time.Now()
 	    if currentTime.After(limit){
@@ -61,16 +66,21 @@ func (coms *ComsManager_s)auction(order elevTypes.Order_t){
 		}//end select
       }//end for
 	coms.intComs.auctionDone<-winner
+	fmt.Println("auction: auction done. winner sendt to auction manager", coms.intComs.auctionDone)
 }
 
 func (self *ComsManager_s)HandleAuctionWinner(winner string, order elevTypes.Order_t ){ //needs to know winner IP and order(if self winner, just send order directly to order module). Sends TCP to winner, and waits for ack. If no ack recieved, take the order. 
 	if winner==self.Ip{
 		self.ExtComs.AddOrder<-order
+		fmt.Println("HandleAuctionWinner: sendt winner=self",winner)
 	}
+	
 	toAll := constructUpdateMsg(self.Ip ,order,winner)
 	self.ExtComs.SendMsgToAll<-toAll	
+	fmt.Println("HandleAuctionWinner: send update on tcp to all",winner)
 	msg:= constructNewOrderMsg(winner,self.Ip, order)
 	self.ExtComs.SendMsg<-msg
+	fmt.Println("HandleAuctionWinner: send update on tcp to all", winner)
 	
 }	
 

@@ -24,7 +24,7 @@ type InternalChan_s struct{
 
 func InternalChannelsInit()InternalChan_s{
 	intChans:=InternalChan_s{}
-	intChans.auctionWinner	= make(chan string, 20)
+	intChans.auctionWinner	= make(chan string)
 	intChans.newCostMsg 	= make(chan elevTypes.Message)
 	intChans.toAuction 		= make(chan elevTypes.Message)
 	intChans.auctionDone 	= make(chan string)
@@ -58,6 +58,8 @@ func Init(ip string, net elevTypes.Net_ExtComs_s)ComsManager_s{
 	comsMan.intComs=InternalChannelsInit()
 	
 	go comsMan.ForwardMessageFromOrder()
+	go comsMan.manageAuction()
+	go comsMan.RecieveMessageFromNet()
 	return comsMan
 	
 }
