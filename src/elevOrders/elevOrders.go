@@ -343,8 +343,8 @@ func get_next_order(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool,order elevTy
             /*  no orders left  */
             return elevTypes.Order_t{}
         default:
-            fmt.Println("			order.get_next_order: dir on request = NONE. this probably shouldn't happen?")
-            return elevTypes.Order_t{}
+            fmt.Println("			order.get_next_order: dir on request = NONE. this when first order is same floor")
+            return order
     }
 }  
 
