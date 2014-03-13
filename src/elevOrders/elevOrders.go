@@ -16,7 +16,7 @@ type Orders_s struct{
 }
 
 func Init(driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManager_ExtComs_s) Orders_s{
-	fmt.Println("elevOrders.init()...")
+	fmt.Println("			elevOrders.init()...")
    
 	tableMap := make(map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool)
 	var table [elevTypes.N_FLOORS][elevTypes.N_DIR] bool
@@ -44,7 +44,7 @@ func Init(driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManager_ExtComs
 
 	go orders.orderHandler()
 
- 	fmt.Println("orders.init: OK!")
+ 	fmt.Println("			orders.init: OK!")
    return orders
 }
 
@@ -71,27 +71,27 @@ func (self *Orders_s)orderHandler(){
 
 		/* from FSM */
 		case order:= <-self.ExtComs.ExecdOrderChan:
-			fmt.Println("orders.orderHandler: got execdOrder: ", order)
+			fmt.Println("			orders.orderHandler: got execdOrder: ", order)
 			self.update_queue(order, MY_IP)
-			fmt.Println("orders.orderHandler: updating queue success! trying to send: self.ExtComs.SendOrderUpdate <- order. ChanID: ", self.ExtComs.SendOrderUpdate)
+			fmt.Println("			orders.orderHandler: updating queue success! trying to send: self.ExtComs.SendOrderUpdate <- order. ChanID: ", self.ExtComs.SendOrderUpdate)
 			self.ExtComs.SendOrderUpdate <- order
-			fmt.Println("orders.orderHandler: orderUpdate sendt! trying to check nextOrder")
+			fmt.Println("			orders.orderHandler: orderUpdate sendt! trying to check nextOrder")
 			nextOrder:= get_next_order(self.queues[MY_IP], order)
-			fmt.Println("orders.orderHandler: got execdOrder: ", order)
+			fmt.Println("			orders.orderHandler: got execdOrder: ", order)
 			if nextOrder.Active{
 			    self.ExtComs.NewOrdersChan <- nextOrder
-			    fmt.Println("orders.orderHandler: next order sendt to fsm: ", nextOrder)
+			    fmt.Println("			orders.orderHandler: next order sendt to fsm: ", nextOrder)
 			}
 
 		case order:= <-self.ExtComs.ExecRequestChan:
-			fmt.Println("orders.orderHandler: got execRequest: ", order)
+			fmt.Println("			orders.orderHandler: got execRequest: ", order)
 			queue := self.queues[MY_IP]
-			shouldExec := (doesExist(order, queue) || should_turn(order, queue)) 
+			shouldExec := (doesExist(order, queue) || is_last_order_in_dir(order, queue)) 
 			if shouldExec{
-			    fmt.Println("orders.orderHandler: sending true on execResponse ")
+			    fmt.Println("			orders.orderHandler: sending true on execResponse ")
 				self.ExtComs.ExecResponseChan <- true
 			}else{
-			    fmt.Println("orders.orderHandler: sending false on execResponse ")
+			    fmt.Println("			orders.orderHandler: sending false on execResponse ")
 			}
 
 		case self.emg =<-self.ExtComs.EmgTriggerdChan:
@@ -101,7 +101,7 @@ func (self *Orders_s)orderHandler(){
 	
 		/* from driver */
 		case button := <-self.ExtComs.ButtonChan:
-			fmt.Println("order.orderHandler: got button press!", button)
+			fmt.Println("			order.orderHandler: got button press!", button)
 			order := elevTypes.Order_t{button.Floor, button.Dir, true}
 			if order.Direction == elevTypes.NONE{
 				self.update_queue(order, MY_IP)
@@ -120,38 +120,49 @@ func doesExist(order elevTypes.Order_t, queue [elevTypes.N_FLOORS][elevTypes.N_D
         case elevTypes.DOWN:
             return queue[order.Floor][elevTypes.DOWN] || queue[order.Floor][elevTypes.NONE]
         case elevTypes.NONE:
-            fmt.Println("order.doesExist: order.dir = NONE; this probably shouldn't happen?")
+            fmt.Println("			order.doesExist: order.dir = NONE; this probably shouldn't happen?")
             return true
         default:
             return queue[order.Floor][elevTypes.UP] || queue[order.Floor][elevTypes.NONE]|| queue[order.Floor][elevTypes.DOWN]
     }
 }
 
-func should_turn(order elevTypes.Order_t, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]bool) bool{
+func is_last_order_in_dir(order elevTypes.Order_t, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]bool) bool{
+    fmt.Println("			order.should_turn: checking for order: ",order)
     switch order.Direction{
         case elevTypes.UP:
-            for floor:= order.Floor; floor < elevTypes.N_FLOORS; floor ++{
-                if doesExist(order, queue){
+            fmt.Println("			order.should_turn: UP ")
+            if order.Floor == elevTypes.N_FLOORS-3{
+                fmt.Println("			order.should_turn: at top floor! returning true ")
+                return true
+            }
+            for floor:= order.Floor+1; floor < elevTypes.N_FLOORS; floor ++{
+                if queue[floor][elevTypes.UP] || queue[floor][elevTypes.DOWN] ||queue[floor][elevTypes.NONE]{
+                    fmt.Println("			order.should_turn: found order above, returning false ",order.Floor)
                     return false
                 }
             }
+            fmt.Println("			order.should_turn: returning true by semidef ")
             return true
         case elevTypes.DOWN:
-            for floor:= order.Floor; floor >= 0; floor --{
-                if doesExist(order, queue){
+            fmt.Println("			order.should_turn: DOWN ")
+            if order.Floor == 0 {return true}
+            for floor:= order.Floor-1; floor >= 0; floor --{
+                if queue[floor][elevTypes.UP] || queue[floor][elevTypes.DOWN] ||queue[floor][elevTypes.NONE]{
+                    fmt.Println("			order.should_turn: found order below, returning false ",order)
                     return false
                 }
             }
             return true
         
         default:
-            fmt.Println("orders.should_turn: order.dir == NONE, this probably shouldnt happen?")
+            fmt.Println("			orders.should_turn: order.dir == NONE, this probably shouldnt happen?")
             return true
     }
 }
 
 func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
-	fmt.Println("orders.updating_queue: ", order)
+	fmt.Println("			orders.updating_queue: ", order)
 	wasEmpty := self.isQueueEmpty()	
 	switch(order.Active){
 		case true:
@@ -159,7 +170,7 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 			queue[order.Floor][order.Direction] = order.Active
 			self.queues[IP] = queue
 			self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, true}
-			fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
+			fmt.Println("			orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
 		case false:
 		    next_order := get_next_order(self.queues[MY_IP], order)
 		    //if next_order.Active == false{
@@ -173,25 +184,25 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 			}
 	}
 	
-	//fmt.Println("queue value set OK!")
+	//fmt.Println("			queue value set OK!")
 	if wasEmpty{
-		fmt.Println("orders.update_queue: sending order to fsm on NewOrderChan!")
+		fmt.Println("			orders.update_queue: sending order to fsm on NewOrderChan!")
 		self.ExtComs.NewOrdersChan <- order
 	}
 }
 
 func (self *Orders_s)isQueueEmpty() bool{
-	fmt.Println("Checking queue...")
+	fmt.Println("			Checking queue...")
 	queue:= self.queues[MY_IP]
 	for floor:=0; floor< elevTypes.N_FLOORS; floor++{
 		for dir:=0; dir< elevTypes.N_DIR; dir++{
 			if	queue[floor][dir] == true{
-				fmt.Println("queue not empty!")
+				fmt.Println("			queue not empty!")
 				return false
 			}
 		}
 	}
-	fmt.Println("queue empty!")
+	fmt.Println("			queue empty!")
 	return true
 }	
 
@@ -224,15 +235,15 @@ func next_order_above(this_floor int, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]
             orderOut = queue[floor][elevTypes.NONE]
             orderUp = queue[floor][elevTypes.UP]
             if orderOut{
-                fmt.Println("next_order_above: returning next: ", elevTypes.Order_t{floor, elevTypes.NONE, true}) 
+                fmt.Println("			next_order_above: returning next: ", elevTypes.Order_t{floor, elevTypes.NONE, true}) 
                 return elevTypes.Order_t{floor, elevTypes.NONE, true}
             }
             if orderUp{
-                fmt.Println("next_order_above returning next: ", elevTypes.Order_t{floor, elevTypes.UP, true}) 
+                fmt.Println("			next_order_above returning next: ", elevTypes.Order_t{floor, elevTypes.UP, true}) 
                 return elevTypes.Order_t{floor, elevTypes.UP, true}
             }
         }
-    fmt.Println("next_order_above found nothing, returning empty:  ", elevTypes.Order_t{}) 
+    fmt.Println("			next_order_above found nothing, returning empty:  ", elevTypes.Order_t{}) 
     return elevTypes.Order_t{}
 }
 
@@ -243,35 +254,35 @@ func next_order_below(this_floor int, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]
             orderOut = queue[floor][elevTypes.NONE]
             orderDown = queue[floor][elevTypes.DOWN]
             if orderOut{
-                fmt.Println("next_order_below: returning next: ", elevTypes.Order_t{floor, elevTypes.NONE, true}) 
+                fmt.Println("			next_order_below: returning next: ", elevTypes.Order_t{floor, elevTypes.NONE, true}) 
                 return elevTypes.Order_t{floor, elevTypes.NONE, true}
             }
             if orderDown{
-                fmt.Println("next_order_below: returning next: ", elevTypes.Order_t{floor, elevTypes.DOWN, true}) 
+                fmt.Println("			next_order_below: returning next: ", elevTypes.Order_t{floor, elevTypes.DOWN, true}) 
                 return elevTypes.Order_t{floor, elevTypes.DOWN, true}
             }
         }
-    fmt.Println("next_order_below found nothing, returning empty:  ", elevTypes.Order_t{}) 
+    fmt.Println("			next_order_below found nothing, returning empty:  ", elevTypes.Order_t{}) 
     return elevTypes.Order_t{}
 }
 
 func get_next_order(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool,order elevTypes.Order_t) elevTypes.Order_t{
-    fmt.Println("order.get_next_order: with dir: ", order.Direction)
+    fmt.Println("			order.get_next_order: with dir: ", order.Direction)
     switch(order.Direction){
         case elevTypes.UP:
             order_up_above := next_order_above(order.Floor, queue)
             if order_up_above.Active { 
-                fmt.Println("order.get_next_order: returning order_up_above: ", order_up_above)
+                fmt.Println("			order.get_next_order: returning order_up_above: ", order_up_above)
                 return order_up_above }
             
             order_down := next_order_below(elevTypes.N_FLOORS-1, queue)
             if order_down.Active { 
-                fmt.Println("order.get_next_order: returning order_down: ", order_down)
+                fmt.Println("			order.get_next_order: returning order_down: ", order_down)
                 return order_down }
             
             order_up_below := next_order_above(0, queue)
             if order_up_below.Active { 
-                fmt.Println("order.get_next_order: returning order_up_below: ", order_up_below)
+                fmt.Println("			order.get_next_order: returning order_up_below: ", order_up_below)
                 return order_up_below }
             
             /*  no orders left  */
@@ -280,23 +291,23 @@ func get_next_order(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool,order elevTy
         case elevTypes.DOWN:
             order_down_below := next_order_below(order.Floor, queue)
             if order_down_below.Active { 
-                fmt.Println("order.get_next_order: returning order_down_below: ", order_down_below)
+                fmt.Println("			order.get_next_order: returning order_down_below: ", order_down_below)
                 return order_down_below }
             
             order_up_below := next_order_above(0, queue)
             if order_up_below.Active{ 
-                fmt.Println("order.get_next_order: returning order_up_below: ", order_up_below)
+                fmt.Println("			order.get_next_order: returning order_up_below: ", order_up_below)
                 return order_up_below }
             
             order_down_above := next_order_below(elevTypes.N_FLOORS-1, queue)
             if order_down_above.Active{ 
-                fmt.Println("order.get_next_order: returning order_down_above: ", order_down_above)
+                fmt.Println("			order.get_next_order: returning order_down_above: ", order_down_above)
                 return order_down_above}
              
             /*  no orders left  */
             return elevTypes.Order_t{}
         default:
-            fmt.Println("order.get_next_order: dir on request = NONE. this probably shouldn't happen?")
+            fmt.Println("			order.get_next_order: dir on request = NONE. this probably shouldn't happen?")
             return elevTypes.Order_t{}
     }
 }  

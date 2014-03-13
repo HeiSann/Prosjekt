@@ -41,8 +41,8 @@ func setLight(floor int, dir elevTypes.Direction_t){
     case floor == 3 && dir == elevTypes.DOWN:
         Set_bit(LIGHT_DOWN4)
     default:
-        fmt.Println("elevDrivers.setLight: Error, Illegal floor or direction")
-        fmt.Println("dir: ", dir, ", floor: ",floor)
+        fmt.Println("		elevDrivers.setLight: Error, Illegal floor or direction")
+        fmt.Println("		dir: ", dir, ", floor: ",floor)
 	}
 }
 
@@ -69,8 +69,8 @@ func clearLight(floor int, dir elevTypes.Direction_t){
     case floor == 3 && dir == elevTypes.DOWN:
         Clear_bit(LIGHT_DOWN4)
     default:
-        fmt.Println("elevDrivers.clearLight: Error! Illegal floor or direction!")
-		fmt.Println("dir: ", dir, ", floor: ",floor)
+        fmt.Println("		elevDrivers.clearLight: Error! Illegal floor or direction!")
+		fmt.Println("		dir: ", dir, ", floor: ",floor)
 	}
 }
 
@@ -95,7 +95,7 @@ func motorCtrl(motorChan chan elevTypes.Direction_t){
 
     	for {
 		   newDir=<-motorChan
-			fmt.Println("motorCtrl recv newDir=", newDir)
+			fmt.Println("		motorCtrl recv newDir=", newDir)
 			switch newDir{
 		     case elevTypes.UP:
 		        	Clear_bit(MOTORDIR)
@@ -123,13 +123,13 @@ func motorCtrl(motorChan chan elevTypes.Direction_t){
 		 	   	     	Set_bit(MOTORDIR)
 		 	      	  	Write_analog(MOTOR,SPEED0)
 						case elevTypes.NONE:
-							fmt.Println("elevDrivers.motorCtrl: lastDir=newDir=elevTypes.NONE, problem?")
+							fmt.Println("		elevDrivers.motorCtrl: lastDir=newDir=elevTypes.NONE, problem?")
 		      		default:
-		         		fmt.Println("elevDrivers.motorCtrl: ERROR, illegal lastDir")
+		         		fmt.Println("		elevDrivers.motorCtrl: ERROR, illegal lastDir")
 					}
 				default:
 		        	Write_analog(MOTOR,SPEED0)
-		        	fmt.Println("elevDrivers.motorCtrl: ERROR, illegal motor direction")
+		        	fmt.Println("		elevDrivers.motorCtrl: ERROR, illegal motor direction")
 			}
         	lastDir = newDir
 		}
@@ -158,12 +158,12 @@ func listenButtons(buttonChan chan elevTypes.Button){
 		for key, button := range buttonMap {
 			newValue := Read_bit(key)
 			if newValue && !buttonList[key] {
-				fmt.Println("Drivers.listenButtonsbutton: button pressed: ", button)
+				fmt.Println("		Drivers.listenButtonsbutton: button pressed: ", button)
            		newButton := button
             	go func() {		//why not select???
-					//fmt.Println("waiting to send...")
+					//fmt.Println("		waiting to send...")
                 	buttonChan <- newButton
-					//fmt.Println("button sendt!")
+					//fmt.Println("		button sendt!")
             	}()
 			}
 			buttonList[key] = newValue      
@@ -190,29 +190,29 @@ func listenSensors(sensorChan chan int){
     for {
         atFloor = false
         for key, floor := range floorMap {
-            //fmt.Println("drivers.listenSensors: checking key, floor: ", key, floor)
+            //fmt.Println("		drivers.listenSensors: checking key, floor: ", key, floor)
             if Read_bit(key) {
-               //fmt.Println("drivers.listenSensors: got reading on floor: ", floor)
+               //fmt.Println("		drivers.listenSensors: got reading on floor: ", floor)
                /*
-                //fmt.Println("got floor reading")
+                //fmt.Println("		got floor reading")
                 go func() {		//why not select???
-					//fmt.Println("drivers.listenSensors: waiting to send: ", floor)
+					//fmt.Println("		drivers.listenSensors: waiting to send: ", floor)
                 	sensorChan <- floor
-					//fmt.Println("drivers.listenSensors: floor sendt!")
+					//fmt.Println("		drivers.listenSensors: floor sendt!")
             	}()
                 */
-                // fmt.Println("drivers.listenSensors: trying to send floor on blocking: ", floor)
+                // fmt.Println("		drivers.listenSensors: trying to send floor on blocking: ", floor)
                 sensorChan <- floor
-                //fmt.Println("drivers.listenSensors: sendt floor on blocking: ", floor)
+                //fmt.Println("		drivers.listenSensors: sendt floor on blocking: ", floor)
                 /*
-                fmt.Println("drivers.listenSensors: trying to send floor unblocking: ", floor)
+                fmt.Println("		drivers.listenSensors: trying to send floor unblocking: ", floor)
                 select {		//why not go?
                     case sensorChan <- floor:
-                        fmt.Println("drivers.listenSensors: sendt floor unblocking: ", floor)
+                        fmt.Println("		drivers.listenSensors: sendt floor unblocking: ", floor)
                     
                     
                     default:
-                        fmt.Println("drivers.listenSensors: gave up sending unblocking: ", floor)
+                        fmt.Println("		drivers.listenSensors: gave up sending unblocking: ", floor)
                 }
                 */
                 atFloor = true
@@ -242,9 +242,9 @@ func Init() Drivers_s{
 	doorOpenChan	:= make(chan bool)
 
 	if !IoInit(){
-        fmt.Println("elevdriver: Driver init()... OK!")
+        fmt.Println("		elevdriver: Driver init()... OK!")
 	} else {
-	    fmt.Println("elevdriver: Driver init()... FAILED!")
+	    fmt.Println("		elevdriver: Driver init()... FAILED!")
 	}
 	
 	clearAllLights();
