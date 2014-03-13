@@ -37,7 +37,7 @@ type intComs_s struct{
 }
 
 type Fsm_s struct{
-   table			[][]func()
+    table		[][]func()
 	state 		State_t
 	lastDir		elevTypes.Direction_t
 	lastFloor   int 
@@ -47,15 +47,15 @@ type Fsm_s struct{
 
 /* Finite State Machine Actions */
 func (self *Fsm_s)action_start(){
-    //fmt.Println("fsm.action_start") 
+    //fmt.Println("				fsm.action_start") 
 	order := <- self.intComs.newOrderChan
-	fmt.Println("fsm.action_start: got order on intComs.newOrderChan: ", order)
+	fmt.Println("				fsm.action_start: got order on intComs.newOrderChan: ", order)
 	curr_floor:= self.lastFloor	
 	switch {
 		case order.Floor == curr_floor:
-			//fmt.Println("fsm.action_start: trying to send exec_order on int.eventChan")
+			//fmt.Println("				fsm.action_start: trying to send exec_order on int.eventChan")
 			self.intComs.eventChan <- EXEC_ORDER
-			//fmt.Println("fsm.action_start: exec_order sendt int.eventChan")
+			//fmt.Println("				fsm.action_start: exec_order sendt int.eventChan")
 		case order.Floor < curr_floor:
 			self.start_down()
 		case order.Floor > curr_floor:
@@ -64,41 +64,41 @@ func (self *Fsm_s)action_start(){
 }
 
 func (self *Fsm_s)action_check_order(){
-    //fmt.Println("fsm.action_check_order")
+    //fmt.Println("				fsm.action_check_order")
 	
 	self.ExtComs.SetFloorIndChan <- self.lastFloor
-	fmt.Println("fsm.action_check_order: floorIndSignal sendt")
+	fmt.Println("				fsm.action_check_order: floorIndSignal sendt")
 	
 	current := elevTypes.Order_t{self.lastFloor, self.lastDir, true}
 	self.ExtComs.ExecRequestChan <- current
-	fmt.Println("fsm.action_check_order: sendt to orders on Ext.Coms.ExecRecuest: ", current)
+	fmt.Println("				fsm.action_check_order: sendt to orders on Ext.Coms.ExecRecuest: ", current)
 }
 
 func (self *Fsm_s)action_exec_same(){
-    //fmt.Println("fsm.action_exec_same")
+    //fmt.Println("				fsm.action_exec_same")
 	self.ExtComs.DoorOpenChan <- true
 	go startTimer(self.intComs.timeoutChan, elevTypes.DOOR_OPEN_TIME)
 	self.lastDir = elevTypes.NONE
 	self.state = DOORS_OPEN 
-	fmt.Println("fsm: DOORS_OPEN\n")
+	fmt.Println("				fsm: DOORS_OPEN\n")
 }
 
 func (self *Fsm_s)action_exec(){
-    fmt.Println("action_exec")
+    fmt.Println("				action_exec")
 	self.ExtComs.MotorChan <- elevTypes.NONE
 	self.ExtComs.DoorOpenChan <- true
 	go startTimer(self.intComs.timeoutChan, elevTypes.DOOR_OPEN_TIME)
 	self.state = DOORS_OPEN 
-	fmt.Println("fsm: DOORS_OPEN\n")
+	fmt.Println("				fsm: DOORS_OPEN\n")
 }
 
 func (self *Fsm_s)action_done(){
-    //fmt.Println("fsm.action_done")
+    //fmt.Println("				fsm.action_done")
 	self.ExtComs.DoorOpenChan <- false
 	self.state = IDLE
-	fmt.Println("fsm: IDLE")
+	fmt.Println("				fsm: IDLE")
 	self.ExtComs.ExecdOrderChan <- elevTypes.Order_t{self.lastFloor, self.lastDir, false}
-	fmt.Println("fsm.action_done: sendt on ExComs.ExecdOrderChan: ", elevTypes.Order_t{self.lastFloor, self.lastDir, false})
+	fmt.Println("				fsm.action_done: sendt on ExComs.ExecdOrderChan: ", elevTypes.Order_t{self.lastFloor, self.lastDir, false})
 }   
 
 func (self *Fsm_s)action_stop(){
@@ -111,7 +111,7 @@ func (self *Fsm_s)action_pause(){
 }
 
 func action_dummy(){
-	fmt.Println("fsm: dummy!\n")
+	fmt.Println("				fsm: dummy!\n")
 }
 
 /* Finite State Machine initializations */
@@ -158,10 +158,10 @@ func (self *Fsm_s)start(){
 	for floor == -1{
 		floor = <- self.ExtComs.FloorChan
 	}	
-	fmt.Println("Found floor")
+	fmt.Println("				Found floor")
 	//stop motor
 	self.ExtComs.MotorChan <- elevTypes.NONE
-	fmt.Println(" floor sendt")
+	fmt.Println("				 floor sendt")
 	//update fsm vars
 	self.state = IDLE
 	self.lastFloor = floor
@@ -169,7 +169,7 @@ func (self *Fsm_s)start(){
 }
 
 func Init(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s)Fsm_s{
-   fmt.Println("fsm.init()...")
+   fmt.Println("				fsm.init()...")
 
 	fsm := Fsm_s{}
 	fsm.init_fsm_table()
@@ -182,34 +182,34 @@ func Init(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s)
 	go fsm.update()
 	go fsm.generate_events()
 	
-	fmt.Println("fsm.state is: ", fsm.state)
-	fmt.Println("fsm.lastFloor is: ", fsm.lastFloor)
-	fmt.Println("fsm.Init: OK!")
+	fmt.Println("				fsm.state is: ", fsm.state)
+	fmt.Println("				fsm.lastFloor is: ", fsm.lastFloor)
+	fmt.Println("				fsm.Init: OK!")
 	return fsm
 }
 
 /* FSM help functions */
 func (self *Fsm_s)start_down(){
-	fmt.Println("fsm.start_down")
+	fmt.Println("				fsm.start_down")
 	self.ExtComs.MotorChan <- elevTypes.DOWN
 	self.state = MOVING_DOWN
 	self.lastDir = elevTypes.DOWN
-	fmt.Println("fsm: MOVING_DOWN\n")
+	fmt.Println("				fsm: MOVING_DOWN\n")
 }
 
 func (self *Fsm_s)start_up(){
-    fmt.Println("fsm.start_up")
+    fmt.Println("				fsm.start_up")
 	self.ExtComs.MotorChan <- elevTypes.UP
 	self.state = MOVING_UP
 	self.lastDir = elevTypes.UP
-	fmt.Println("fsm: MOVING_UP\n")
+	fmt.Println("				fsm: MOVING_UP\n")
 }
 
 func (self *Fsm_s)update(){
 	var event Event_t
 	for{
 		event =<- self.intComs.eventChan
-		fmt.Println("fmt.update: updating fsm[state][event]:", self.state, " ", event)
+		fmt.Println("				fmt.update: updating fsm[state][event]:", self.state, " ", event)
 		self.table[self.state][event]()
 	}
 }
@@ -229,31 +229,31 @@ func (fsm *Fsm_s)generate_events(){
 			    fsm.intComs.eventChan <- OBSTRUCTION
 			    
             case floor := <-fsm.ExtComs.FloorChan:
-                //fmt.Println("fsm.generate_events: got a floor reading: ", floor) 
+                //fmt.Println("				fsm.generate_events: got a floor reading: ", floor) 
                 if floor != -1 && floor != fsm.lastFloor{
                     fsm.lastFloor = floor  //TODO: FIX!
-				    fmt.Println("fsm.generate_events: reached new floor! lastFloor is now: ", floor) 
+				    fmt.Println("				fsm.generate_events: reached new floor! lastFloor is now: ", floor) 
 				    fsm.intComs.eventChan <- FLOOR_REACHED
 		       }
 		       
             case order:=<- fsm.ExtComs.NewOrdersChan:
-			    fmt.Println("fsm: got new order on NewOrdersChan")
+			    fmt.Println("				fsm: got new order on NewOrdersChan")
 			    
                 go func() {fsm.intComs.eventChan <- NEW_ORDER}()
-                fmt.Println("fsm: sendt order on internal eventchan")
+                fmt.Println("				fsm: sendt order on internal eventchan")
                 
 			    go func() {fsm.intComs.newOrderChan <- order}()
-			    fmt.Println("fsm: sendt order on internal newOrderChan")
+			    fmt.Println("				fsm: sendt order on internal newOrderChan")
 			    
 		    case execOrder:= <- fsm.ExtComs.ExecResponseChan:
-		        fmt.Println("fsm.generate_events: got ExecResponse: ", execOrder)
+		        fmt.Println("				fsm.generate_events: got ExecResponse: ", execOrder)
 			    if execOrder{
-			        fmt.Println("fsm.generate_events: sending EXEC_ORDER on intComs.eventChan")
+			        fmt.Println("				fsm.generate_events: sending EXEC_ORDER on intComs.eventChan")
 				    fsm.intComs.eventChan <- EXEC_ORDER
 			    }
 			    
             case <-fsm.intComs.timeoutChan:
-                fmt.Println("fsm.generate_eventes: TIMEOUT")
+                fmt.Println("				fsm.generate_eventes: TIMEOUT")
 			    go func() {fsm.intComs.eventChan <- TIMEOUT}()	
 			    
 		    default:
