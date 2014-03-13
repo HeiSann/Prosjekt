@@ -53,16 +53,19 @@ func (self *Orders_s)orderHandler(){
 		select{
 		/* from ComHandler */
 		case msg:= <-self.ExtComs.RecvOrderUpdate:	
+		    fmt.Println("			order.orderHandler: recieved on RecvOrderUpdate, msg: ",msg) 
 			self.update_queue(msg.Order, msg.Payload)
 			//send ACK?
 
 		case order:= <-self.ExtComs.RequestScoreChan:
+		    fmt.Println("			order.orderHandler: recieved on RequestScoreChan, order: ",order) 
 			//get elevPos
 			elevPos := elevTypes.ElevPos_t{}
 			score := getScore(order, elevPos, self.queues[MY_IP]) 
 			self.ExtComs.RespondScoreChan <- score
 			
 		case order:=<-self.ExtComs.AddOrder:
+		    fmt.Println("			order.orderHandler: recieved on AddOrder, order: ",order) 
 		    self.update_queue(order, MY_IP)
 		    if self.isQueueEmpty(){
 		        self.ExtComs.NewOrdersChan <- order
