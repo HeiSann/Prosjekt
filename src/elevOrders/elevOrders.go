@@ -168,18 +168,18 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 	switch(order.Active){
 		case true:
 		    queue := self.queues[IP]
-			queue[order.Floor][order.Direction] = order.Active
+			queue[order.Floor][order.Direction] = true
 			self.queues[IP] = queue
 			self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, true}
 			fmt.Println("			orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
 		case false:
 		    if IP == self.MY_IP{ 
 		        next_order := get_next_order(self.queues[IP], order)
-		        //if next_order.Active == false{
-		        //    self.delete_all_orders_on_floor(order, IP) 
 			    if next_order.Floor == order.Floor{
+			        also_execd := getReverseOrder(order)
+			        self.ExtComs.SendOrderUpdate <- also_execd
+			        
 			        self.delete_all_orders_on_floor(order, IP)
-			       	self.ExtComs.SendOrderUpdate <- order
 			     }else{	
 			        self.delete_order(order, IP)
 			    }
@@ -194,6 +194,18 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 		self.ExtComs.NewOrdersChan <- order
 	}
 	fmt.Println("           queues are now: ", self.queues)
+}
+
+func getReverseOrder(order elevTypes.Order_t) elevTypes.Order_t{
+    switch order.Direction{
+        case elevTypes.UP:
+            return elevTypes.Order_t{order.Floor, elevTypes.DOWN, order.Active}
+        case elevTypes.DOWN:
+            return elevTypes.Order_t{order.Floor, elevTypes.UP, order.Active}
+        default:
+            fmt.Println("			orders.updating_queue: order.Dir = NONE, probably shouldn't happen?")
+            return elevTypes.Order_t{order.Floor, elevTypes.NONE,  order.Active}
+    }
 }
 
 func (self *Orders_s)get_elev_pos() elevTypes.ElevPos_t{
