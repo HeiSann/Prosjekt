@@ -24,7 +24,7 @@ func main(){
    var drivers = elevDrivers.Init()
    var net = elevNet.Init()
    var coms = comsManager.Init(net.Ip, net.ExtComs)
-   var orders = elevOrders.Init(drivers.ExtComs, coms.ExtComs)
+   var orders = elevOrders.Init(net.Ip, drivers.ExtComs, coms.ExtComs)
    var fsm = elevFSM.Init(drivers.ExtComs, orders.ExtComs)
    
    var Elev = Elevator{drivers, net, coms, orders, fsm}

@@ -7,15 +7,14 @@ import(
 	"elevTypes"
 )
 
-const MY_IP = "1.1.1.1"
-
 type Orders_s struct{
+    MY_IP           string
 	queues			map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool
 	emg				bool
 	ExtComs			elevTypes.Orders_ExtComs_s
 }
 
-func Init(driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManager_ExtComs_s) Orders_s{
+func Init(ip string,driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManager_ExtComs_s) Orders_s{
 	fmt.Println("			elevOrders.init()...")
    
 	tableMap := make(map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool)
@@ -41,7 +40,7 @@ func Init(driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManager_ExtComs
 	extcoms.SendOrderUpdate 	= coms.SendOrderUpdate
 	extcoms.RecvOrderUpdate 	= coms.RecvOrderUpdate
 
-	orders := Orders_s{tableMap, false, extcoms}
+	orders := Orders_s{ip, tableMap, false, extcoms}
 
 	go orders.orderHandler()
 
@@ -61,24 +60,24 @@ func (self *Orders_s)orderHandler(){
 		case order:= <-self.ExtComs.RequestScoreChan:
 		    fmt.Println("			order.orderHandler: recieved on RequestScoreChan, order: ",order) 
 			elevPos:= self.get_elev_pos()
-			score := getScore(order, elevPos, self.queues[MY_IP]) 
+			score := getScore(order, elevPos, self.queues[self.MY_IP]) 
 			self.ExtComs.RespondScoreChan <- score
 			
 		case order:=<-self.ExtComs.AddOrder:
 		    fmt.Println("			order.orderHandler: recieved on AddOrder, order: ",order) 
-		    self.update_queue(order, MY_IP)
-		    if self.isQueueEmpty(){
+		    self.update_queue(order, self.MY_IP)
+		    if self.isQueueEmpty(self.MY_IP){
 		        self.ExtComs.NewOrdersChan <- order
 		    }
 		    
 		/* from FSM */
 		case order:= <-self.ExtComs.ExecdOrderChan:
 			fmt.Println("			orders.orderHandler: got execdOrder: ", order)
-			self.update_queue(order, MY_IP)
+			self.update_queue(order, self.MY_IP)
 			fmt.Println("			orders.orderHandler: updating queue success! trying to send: self.ExtComs.SendOrderUpdate <- order. ChanID: ", self.ExtComs.SendOrderUpdate)
 			self.ExtComs.SendOrderUpdate <- order
 			fmt.Println("			orders.orderHandler: orderUpdate sendt! trying to check nextOrder")
-			nextOrder:= get_next_order(self.queues[MY_IP], order)
+			nextOrder:= get_next_order(self.queues[self.MY_IP], order)
 			fmt.Println("			orders.orderHandler: got execdOrder: ", order)
 			if nextOrder.Active{
 			    self.ExtComs.NewOrdersChan <- nextOrder
@@ -87,7 +86,7 @@ func (self *Orders_s)orderHandler(){
 
 		case order:= <-self.ExtComs.ExecRequestChan:
 			fmt.Println("			orders.orderHandler: got execRequest: ", order)
-			queue := self.queues[MY_IP]
+			queue := self.queues[self.MY_IP]
 			shouldExec := (doesExist(order, queue) || is_last_order_in_dir(order, queue)) 
 			if shouldExec{
 			    fmt.Println("			orders.orderHandler: sending true on execResponse ")
@@ -106,7 +105,7 @@ func (self *Orders_s)orderHandler(){
 			fmt.Println("			order.orderHandler: got button press!", button)
 			order := elevTypes.Order_t{button.Floor, button.Dir, true}
 			if order.Direction == elevTypes.NONE{
-				self.update_queue(order, MY_IP)
+				self.update_queue(order, self.MY_IP)
 			} else{
 			self.ExtComs.AuctionOrder <- order
 			}
@@ -165,7 +164,7 @@ func is_last_order_in_dir(order elevTypes.Order_t, queue[elevTypes.N_FLOORS][ele
 
 func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 	fmt.Println("			orders.updating_queue: ", order)
-	wasEmpty := self.isQueueEmpty()	
+	wasEmpty := self.isQueueEmpty(IP)	
 	switch(order.Active){
 		case true:
 		    queue := self.queues[IP]
@@ -174,7 +173,7 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 			self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, true}
 			fmt.Println("			orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
 		case false:
-		    next_order := get_next_order(self.queues[MY_IP], order)
+		    next_order := get_next_order(self.queues[IP], order)
 		    //if next_order.Active == false{
 		    //    self.delete_all_orders_on_floor(order, IP) 
 			if next_order.Floor == order.Floor{
@@ -202,9 +201,9 @@ func (self *Orders_s)get_elev_pos() elevTypes.ElevPos_t{
 }
 
 
-func (self *Orders_s)isQueueEmpty() bool{
+func (self *Orders_s)isQueueEmpty(ip string) bool{
 	fmt.Println("			Checking queue...")
-	queue:= self.queues[MY_IP]
+	queue:= self.queues[ip]
 	for floor:=0; floor< elevTypes.N_FLOORS; floor++{
 		for dir:=0; dir< elevTypes.N_DIR; dir++{
 			if	queue[floor][dir] == true{
