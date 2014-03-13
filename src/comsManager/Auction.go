@@ -31,6 +31,7 @@ Auction:
 			case costMsg:=<-self.intComs.costMsg:
 				if (costMsg.Order.Direction==order.Direction) && (costMsg.Order.Floor==order.Floor){
 					self.intComs.newCostMsg<-costMsg
+					fmt.Println("\t ManageAuxtion: recieved cost from other elev",costMsg.Payload)
 				}//check if correct order 
 			case winner:=<-self.intComs.auctionDone:
 				fmt.Println("\t manageAuction recieved winner, started handle", self.intComs.auctionDone)
@@ -51,7 +52,7 @@ func (coms *ComsManager_s)auction(order elevTypes.Order_t){
     limit:=time.Now().Add(AUCTION_DURATION)
     
     cost:=coms.getMyCost(order)
-    fmt.Println(cost) //debug
+    fmt.Println("\t auction: got cost", cost) //debug
 	winner:=coms.Ip
 	for{
 	    currentTime:=time.Now()
@@ -64,7 +65,7 @@ func (coms *ComsManager_s)auction(order elevTypes.Order_t){
 		    if temp<cost{
 				cost=temp
 		        winner=msg.From	
-		   	} //payload=int, trouble with message type		
+		   	} 		
 		default:
 		    time.Sleep(time.Millisecond*SELECT_SLEEP_TIME)
 		}//end select

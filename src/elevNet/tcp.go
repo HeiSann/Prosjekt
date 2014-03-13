@@ -99,9 +99,10 @@ func SendTcpMsg(msg elevTypes.Message, tcpConnections map[string]net.Conn){
 	}
 }	
 
-func SendTcpToAll(msg elevTypes.Message, tcpConnections map[string]net.Conn){//liker ikke helt at elevNet endrer på ipadressen når coms egentlig skal gjørd det?
+func SendTcpToAll(msg elevTypes.Message, tcpConnections map[string]net.Conn){
 	for ip, _ := range tcpConnections{
 		msg.To=ip
+		fmt.Println("SendTcpToAll:",ip)
 		SendTcpMsg(msg,tcpConnections)
 	}
 }

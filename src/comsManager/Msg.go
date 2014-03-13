@@ -15,28 +15,27 @@ func (comsMan *ComsManager_s)RecieveMessageFromNet(){
         
     
         switch msg.Type{
-		  case "test":
-				fmt.Println("tcp msg recieved")
-				comsMan.TcpSenderTest(msg.From)
 				
 		  case "PING":
 		  		comsMan.ExtComs.PingMsg<-msg
 
 		  case "COST":
 		  		comsMan.intComs.costMsg<-msg
-
+				fmt.Println("\t RecieveMessegeFromNet: COST;", msg.Cost)
 		  case "NEED_COST":
 		  		cost :=comsMan.getMyCost(msg.Order) //remember if only cost<cost
 		  		costMsg:=constructCostMsg(comsMan.Ip, msg.From, msg.Order, cost)
 		  		comsMan.ExtComs.SendMsg<-costMsg
-		  		fmt.Println("\t sendt my cost to the elevator requiring it")
+		  		fmt.Println("\t sendt my cost to the elevator requiring it",cost)
 		  		
 
 		  case "ADD_ORDER":
 		  		comsMan.ExtComs.AddOrder<-msg.Order
+		  		fmt.Println("\t RecieveMessegeFromNet: ADD_ORDER;", msg.Order)
 
 		  case "UPDATE_BACKUP":
 				comsMan.ExtComs.RecvOrderUpdate<-msg
+				fmt.Println("\t RecieveMessegeFromNet: UPDATE_BACKUP;", msg.Order)
 
 		  case "DEAD ELEVATOR":
 		  //broadcast the ip. Start auctioning the dead elevators external orders
