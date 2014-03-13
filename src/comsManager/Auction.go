@@ -89,13 +89,15 @@ func (self *ComsManager_s)HandleAuctionWinner(winner string, order elevTypes.Ord
 		fmt.Println("\t HandleAuctionWinner: sendt winner=self",winner)
 	}
 	
+	
+	msg:= constructNewOrderMsg(winner,self.Ip, order)
+	self.ExtComs.SendMsg<-msg
+	fmt.Println("\t HandleAuctionWinner: send order to winner", winner)
+	
 	toAll := constructUpdateMsg(self.Ip ,order,winner)
 	fmt.Println("\t HandleAuctionWinner:constructed update msg, trying to send on channel:", self.ExtComs.SendMsgToAll)
 	self.ExtComs.SendMsgToAll<-toAll	
 	fmt.Println("\t HandleAuctionWinner: send update on tcp to all",winner)
-	msg:= constructNewOrderMsg(winner,self.Ip, order)
-	self.ExtComs.SendMsg<-msg
-	fmt.Println("\t HandleAuctionWinner: send update on tcp to all", winner)
 	
 }	
 
