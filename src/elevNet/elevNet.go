@@ -36,7 +36,7 @@ func Init()ElevNet_s{
 	go elevNet.ListenToBroadcast()
 	go elevNet.ManageTCPCom()
 	go elevNet.RefreshNetwork()
-	
+	go elevNet.SendMsgToAll()
 	return elevNet
 }
 

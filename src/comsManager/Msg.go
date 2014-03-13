@@ -3,6 +3,7 @@ package comsManager
 import ("fmt"
 		"time"
 		"elevTypes"
+		"strconv"
 		)
 
 
@@ -25,7 +26,9 @@ func (comsMan *ComsManager_s)RecieveMessageFromNet(){
 		  		comsMan.intComs.costMsg<-msg
 
 		  case "NEED_COST":
-		  		//send cost function and the order it relates to. JSON for order send?? 
+		  		cost :=comsMan.getMyCost(msg.Order)
+		  		constructCostMsg(comsMan.Ip, msg.From, msg.Order, cost)
+		  		
 
 		  case "ADD_ORDER":
 		  		comsMan.ExtComs.AddOrder<-msg.Order
@@ -71,3 +74,13 @@ func (self *ComsManager_s)ForwardMessageFromOrder(){
 	}	
 }
 
+
+func constructCostMsg(myIp string, toIp string, order elevTypes.Order_t, cost int)elevTypes.Message{
+	msg:=elevTypes.Message{}
+	msg.From = myIp
+	msg.To = toIp
+	msg.Type="COST"
+	msg.Payload = strconv.Itoa(cost)
+	msg.Order = order	 
+	return msg
+}

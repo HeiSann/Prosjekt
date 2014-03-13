@@ -57,9 +57,9 @@ func Init(ip string, net elevTypes.Net_ExtComs_s)ComsManager_s{
 	comsMan.ExtComs=ExternalChannelsInit(net)
 	comsMan.intComs=InternalChannelsInit()
 	
+	go comsMan.RecieveMessageFromNet()
 	go comsMan.ForwardMessageFromOrder()
 	go comsMan.manageAuction()
-	go comsMan.RecieveMessageFromNet()
-	return comsMan
 	
+	return comsMan
 }

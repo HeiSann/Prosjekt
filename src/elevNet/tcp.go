@@ -14,8 +14,8 @@ const BUFF_SIZE = 1024
 
 
 func (elevNet *ElevNet_s)ManageTCPCom(){	
+	fmt.Println("go tcp manager")
 	go elevNet.intComs.listenTcpCon()
-	fmt.Println("intcp")
 
 	tcpConnections:= make(map[string]net.Conn)
 	

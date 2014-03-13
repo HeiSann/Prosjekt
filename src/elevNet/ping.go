@@ -79,6 +79,7 @@ func (toTcp *InternalChan_s)deletePinger(pingMap map[string]time.Time, ip string
 }
 
 func (toNet *ElevNet_s) BroadCastPing(){
+	
 	myIp:=GetMyIP()
 	destIp:=GetBroadcastIP(myIp)
 	for{	
