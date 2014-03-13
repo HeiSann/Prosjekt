@@ -70,6 +70,11 @@ func (self *ComsManager_s)ForwardMessageFromOrder(){
 			msg:=constructUpdateMsg(self.Ip, order, self.Ip)
 			self.ExtComs.SendMsgToAll<-msg
 			fmt.Println("\t comsManager.ForwardMessageFromOrder: sendt msg self.ExtComs.SendMsgToAll<-msg, msg=", msg)
+		case order:=<-self.intComs.needCost:
+			needCostMsg:=constructNeedCostMsg(self.Ip, order)
+    		fmt.Println("\t comsManager: costMsg created. Trying to send")
+    		self.ExtComs.SendMsgToAll<-needCostMsg
+    		fmt.Println("\t comsManager: send need cost Msg to all tcp elevators")			
 		default:
 			time.Sleep(time.Millisecond*SELECT_SLEEP_TIME)
 		}
@@ -94,3 +99,5 @@ func constructNeedCostMsg(myIP string, order elevTypes.Order_t)elevTypes.Message
 	msg.Order = order
 	return msg
 }
+
+

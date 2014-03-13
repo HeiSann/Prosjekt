@@ -23,6 +23,8 @@ func (self *ComsManager_s)manageAuction(){
 		order:=<-self.ExtComs.AuctionOrder
 		fmt.Println("\t manageAuction: recieved up/down order from order module")
 		go self.auction(order)
+		self.intComs.needCost<-order
+		fmt.Println("\t manageAuctions: sendt needcost on internal channel to comsMan")
 Auction:
 		for{
 			select{			
@@ -45,11 +47,9 @@ Auction:
 }
 
 func (coms *ComsManager_s)auction(order elevTypes.Order_t){
+	fmt.Println("\t auction:started auction of order", order)
     limit:=time.Now().Add(AUCTION_DURATION)
     
-    needCostMsg:=constructNeedCostMsg(coms.Ip, order)
-    coms.ExtComs.SendMsgToAll<-needCostMsg
-    fmt.Println("\t auction: send need cost Msg to all tcp elevators")
     cost:=coms.getMyCost(order)
     fmt.Println(cost) //debug
 	winner:=coms.Ip

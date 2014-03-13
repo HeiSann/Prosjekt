@@ -18,6 +18,7 @@ type InternalChan_s struct{
 	toAuction 		chan elevTypes.Message
     auctionDone 	chan string
     costMsg 		chan elevTypes.Message
+    needCost		chan elevTypes.Order_t
 	
 }
 
@@ -29,6 +30,7 @@ func InternalChannelsInit()InternalChan_s{
 	intChans.toAuction 		= make(chan elevTypes.Message)
 	intChans.auctionDone 	= make(chan string)
 	intChans.costMsg 		= make(chan elevTypes.Message)
+	intChans.needCost 		=make(chan elevTypes.Order_t)
 	
 	
 	return intChans
