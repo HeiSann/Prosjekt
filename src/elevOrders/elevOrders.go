@@ -129,41 +129,32 @@ func doesExist(order elevTypes.Order_t, queue [elevTypes.N_FLOORS][elevTypes.N_D
 func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 	fmt.Println("orders.updating_queue: ", order)
 	wasEmpty := self.isQueueEmpty()	
-	queue := self.queues[IP]
 	switch(order.Active){
 		case true:
+		    queue := self.queues[IP]
 			queue[order.Floor][order.Direction] = order.Active
+			self.queues[IP] = queue
 			self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, true}
 			fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
 		case false:
-		    next_order := get_next_order(self.queue[MY_IP], order)
+		    next_order := get_next_order(self.queues[MY_IP], order)
 		    if next_order.Active == false{
-		    
-			else if next_order.Floor== order.floor{  
-				    queue[order.Floor][elevTypes.UP] = false
-			     	queue[order.Floor][elevTypes.DOWN] = false
-			     	queue[order.Floor][elevTypes.NONE] = false
-			     	//TODO: notify comsmanager of double expedition
-			     	
-			     	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.UP, false}
-			     	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.DOWN, false}
-			     	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
-			 }else{		
-				queue[order.Floor][elevTypes.NONE] = order.Active
-				queue[order.Floor][order.Direction] = order.Active
-				self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
-				fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, elevTypes.NONE, false})
-				self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, false}
-				fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, false})
+		        self.exec_all_orders_on_floor(order, IP)
+		        
+			}else if next_order.Floor== order.Floor{
+			    self.exec_all_orders_on_floor(order, IP)
+			   	//TODO: notify comsmanager of double expedition
+			 }else{	
+			    self.delete_order(order, IP)	
+			    
 			}
 	}
-	self.queues[IP] = queue
+	
 	//fmt.Println("queue value set OK!")
 	if wasEmpty{
 		fmt.Println("orders.update_queue: sending order to fsm on NewOrderChan!")
 		self.ExtComs.NewOrdersChan <- order
 	}
-	fmt.Println("queue is now: ", queue)
 }
 
 func (self *Orders_s)isQueueEmpty() bool{
@@ -180,6 +171,28 @@ func (self *Orders_s)isQueueEmpty() bool{
 	fmt.Println("queue empty!")
 	return true
 }	
+
+func (self *Orders_s)delete_order(order elevTypes.Order_t, IP string){
+    queue := self.queues[IP]
+	queue[order.Floor][elevTypes.NONE] = order.Active
+	queue[order.Floor][order.Direction] = order.Active
+	self.queues[IP] = queue
+	
+	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
+	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, false}
+}
+
+func (self *Orders_s)exec_all_orders_on_floor(order elevTypes.Order_t, IP string){
+    queue := self.queues[IP]
+    queue[order.Floor][elevTypes.UP] = false
+   	queue[order.Floor][elevTypes.DOWN] = false
+   	queue[order.Floor][elevTypes.NONE] = false
+   	self.queues[IP] = queue
+   	
+   	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.UP, false}
+   	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.DOWN, false}
+   	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
+}
 
 func next_order_above(this_floor int, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]bool) elevTypes.Order_t{
     orderOut:= false
