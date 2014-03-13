@@ -11,7 +11,7 @@ const SELECT_SLEEP_TIME = 2
 const AUCTION_DURATION = 20
 		
 
-func (self *ComsManager_s)getMyCost(order elevTypes.Order_t)int{ //do this need to be in order maybe
+func (self *ComsManager_s)getMyCost(order elevTypes.Order_t)int{ 
 	self.ExtComs.RequestCost<-order
 	cost:=<-self.ExtComs.RecvCost
     return cost
@@ -83,7 +83,7 @@ func (coms *ComsManager_s)auction(order elevTypes.Order_t){
 	fmt.Println("\t auction: auction done. winner sendt to auction manager", coms.intComs.auctionDone)
 }
 
-func (self *ComsManager_s)HandleAuctionWinner(winner string, order elevTypes.Order_t ){ //needs to know winner IP and order(if self winner, just send order directly to order module). Sends TCP to winner, and waits for ack. If no ack recieved, take the order. 
+func (self *ComsManager_s)HandleAuctionWinner(winner string, order elevTypes.Order_t ){  
 	if winner==self.Ip{
 		self.ExtComs.AddOrder<-order
 		fmt.Println("\t HandleAuctionWinner: sendt winner=self",winner)
@@ -98,6 +98,7 @@ func (self *ComsManager_s)HandleAuctionWinner(winner string, order elevTypes.Ord
 	fmt.Println("\t HandleAuctionWinner: send update on tcp to all", winner)
 	
 }	
+
 
 
 func constructUpdateMsg(myIp string, order elevTypes.Order_t, actionElev string)elevTypes.Message{

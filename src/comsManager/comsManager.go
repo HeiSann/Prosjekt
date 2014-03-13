@@ -46,7 +46,7 @@ func ExternalChannelsInit(net elevTypes.Net_ExtComs_s)elevTypes.ComsManager_ExtC
 	//communication to order
 	extChans.RequestCost = make(chan elevTypes.Order_t)
 	extChans.RecvCost = make(chan int)
-	extChans.AuctionOrder = make(chan elevTypes.Order_t)
+	extChans.AuctionOrder = make(chan elevTypes.Order_t,20)
 	extChans.AddOrder = make(chan elevTypes.Order_t)
 	extChans.SendOrderUpdate = make(chan elevTypes.Order_t)
 	extChans.RecvOrderUpdate = make(chan elevTypes.Message)
