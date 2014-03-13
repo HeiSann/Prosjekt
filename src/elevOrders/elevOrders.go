@@ -189,7 +189,7 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 	}
 	
 	//fmt.Println("			queue value set OK!")
-	if wasEmpty{
+	if wasEmpty && IP == self.MY_IP{
 		fmt.Println("			orders.update_queue: sending order to fsm on NewOrderChan!")
 		self.ExtComs.NewOrdersChan <- order
 	}
