@@ -26,7 +26,7 @@ func (comsMan *ComsManager_s)RecieveMessageFromNet(){
 		  		cost :=comsMan.getMyCost(msg.Order) //remember if only cost<cost
 		  		costMsg:=constructCostMsg(comsMan.Ip, msg.From, msg.Order, cost)
 		  		comsMan.ExtComs.SendMsg<-costMsg
-		  		fmt.Println("\t sendt my cost to the elevator requiring it")
+		  		fmt.Println("\t sendt my cost to the elevator requiring it", costMsg.Payload)
 		  		
 
 		  case "ADD_ORDER":
