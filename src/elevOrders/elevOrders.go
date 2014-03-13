@@ -173,16 +173,19 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 			self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, true}
 			fmt.Println("			orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
 		case false:
-		    next_order := get_next_order(self.queues[IP], order)
-		    //if next_order.Active == false{
-		    //    self.delete_all_orders_on_floor(order, IP) 
-			if next_order.Floor == order.Floor{
-			    self.delete_all_orders_on_floor(order, IP)
-			   	self.ExtComs.SendOrderUpdate <- order
-			 }else{	
-			    self.delete_order(order, IP)	
-			    
-			}
+		    if IP == self.MY_IP{ 
+		        next_order := get_next_order(self.queues[IP], order)
+		        //if next_order.Active == false{
+		        //    self.delete_all_orders_on_floor(order, IP) 
+			    if next_order.Floor == order.Floor{
+			        self.delete_all_orders_on_floor(order, IP)
+			       	self.ExtComs.SendOrderUpdate <- order
+			     }else{	
+			        self.delete_order(order, IP)
+			    }
+	        }else{
+	            self.delete_order(order, IP)
+	        }
 	}
 	
 	//fmt.Println("			queue value set OK!")
