@@ -19,8 +19,8 @@ func Init(driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManager_ExtComs
 	fmt.Println("			elevOrders.init()...")
    
 	tableMap := make(map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool)
-	var table [elevTypes.N_FLOORS][elevTypes.N_DIR] bool
-	tableMap["MY_IP"] = table
+	//var table [elevTypes.N_FLOORS][elevTypes.N_DIR] bool
+	//tableMap["MY_IP"] = table
 
 	var extcoms = elevTypes.Orders_ExtComs_s{}
 
@@ -134,7 +134,7 @@ func is_last_order_in_dir(order elevTypes.Order_t, queue[elevTypes.N_FLOORS][ele
     switch order.Direction{
         case elevTypes.UP:
             fmt.Println("			order.should_turn: UP ")
-            if order.Floor == elevTypes.N_FLOORS-3{
+            if order.Floor == elevTypes.N_FLOORS-1{
                 fmt.Println("			order.should_turn: at top floor! returning true ")
                 return true
             }
@@ -191,6 +191,7 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 		fmt.Println("			orders.update_queue: sending order to fsm on NewOrderChan!")
 		self.ExtComs.NewOrdersChan <- order
 	}
+	fmt.Println("           queues are now: ", self.queues)
 }
 
 func (self *Orders_s)get_elev_pos() elevTypes.ElevPos_t{
