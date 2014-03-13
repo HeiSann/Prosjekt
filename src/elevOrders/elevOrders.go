@@ -85,7 +85,8 @@ func (self *Orders_s)orderHandler(){
 
 		case order:= <-self.ExtComs.ExecRequestChan:
 			fmt.Println("orders.orderHandler: got execRequest: ", order)
-			shouldExec := doesExist(order, self.queues[MY_IP])
+			queue := self.queues[MY_IP]
+			shouldExec := (doesExist(order, queue) || should_turn(order, queue)) 
 			if shouldExec{
 			    fmt.Println("orders.orderHandler: sending true on execResponse ")
 				self.ExtComs.ExecResponseChan <- true
@@ -126,6 +127,29 @@ func doesExist(order elevTypes.Order_t, queue [elevTypes.N_FLOORS][elevTypes.N_D
     }
 }
 
+func should_turn(order elevTypes.Order_t, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]bool) bool{
+    switch order.Direction{
+        case elevTypes.UP:
+            for floor:= order.Floor; floor < elevTypes.N_FLOORS; floor ++{
+                if doesExist(order, queue){
+                    return false
+                }
+            }
+            return true
+        case elevTypes.DOWN:
+            for floor:= order.Floor; floor >= 0; floor --{
+                if doesExist(order, queue){
+                    return false
+                }
+            }
+            return true
+        
+        default:
+            fmt.Println("orders.should_turn: order.dir == NONE, this probably shouldnt happen?")
+            return true
+    }
+}
+
 func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 	fmt.Println("orders.updating_queue: ", order)
 	wasEmpty := self.isQueueEmpty()	
@@ -138,11 +162,10 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 			fmt.Println("orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
 		case false:
 		    next_order := get_next_order(self.queues[MY_IP], order)
-		    if next_order.Active == false{
-		        self.exec_all_orders_on_floor(order, IP)
-		        
-			}else if next_order.Floor== order.Floor{
-			    self.exec_all_orders_on_floor(order, IP)
+		    //if next_order.Active == false{
+		    //    self.delete_all_orders_on_floor(order, IP) 
+			if next_order.Floor == order.Floor{
+			    self.delete_all_orders_on_floor(order, IP)
 			   	//TODO: notify comsmanager of double expedition
 			 }else{	
 			    self.delete_order(order, IP)	
@@ -182,7 +205,7 @@ func (self *Orders_s)delete_order(order elevTypes.Order_t, IP string){
 	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, false}
 }
 
-func (self *Orders_s)exec_all_orders_on_floor(order elevTypes.Order_t, IP string){
+func (self *Orders_s)delete_all_orders_on_floor(order elevTypes.Order_t, IP string){
     queue := self.queues[IP]
     queue[order.Floor][elevTypes.UP] = false
    	queue[order.Floor][elevTypes.DOWN] = false
