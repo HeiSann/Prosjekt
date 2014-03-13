@@ -143,6 +143,7 @@ func(self *Fsm_s)init_ExtComs(driver elevTypes.Drivers_ExtComs_s, orders elevTyp
 	self.ExtComs.DoorOpenChan		= driver.DoorOpenChan
 	self.ExtComs.SetLightChan		= driver.SetLightChan
 	self.ExtComs.SetFloorIndChan	= driver.SetFloorIndChan
+	self.ExtComs.ElevPosRequest     = orders.ElevPosRequest
 	self.ExtComs.NewOrdersChan		= orders.NewOrdersChan
 	self.ExtComs.ExecdOrderChan 	= orders.ExecdOrderChan
 	self.ExtComs.ExecRequestChan 	= orders.ExecRequestChan 
@@ -181,14 +182,26 @@ func Init(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s)
 	//start the fsm routunes
 	go fsm.update()
 	go fsm.generate_events()
+	go fsm.answer_pos_requests()
 	
 	fmt.Println("				fsm.state is: ", fsm.state)
 	fmt.Println("				fsm.lastFloor is: ", fsm.lastFloor)
 	fmt.Println("				fsm.Init: OK!")
 	return fsm
 }
+    
 
 /* FSM help functions */
+
+func (self *Fsm_s)answer_pos_requests(){
+    pos:= elevTypes.ElevPos_t{}
+    for{
+        pos= <-self.ExtComs.ElevPosRequest
+        pos.Floor = self.lastFloor
+        pos.Direction = self.lastDir
+        self.ExtComs.ElevPosRequest <- pos
+    }
+}
 func (self *Fsm_s)start_down(){
 	fmt.Println("				fsm.start_down")
 	self.ExtComs.MotorChan <- elevTypes.DOWN

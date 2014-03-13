@@ -65,6 +65,7 @@ type ComsManager_ExtComs_s struct{
 
 type Orders_ExtComs_s struct{
 	/* Channels initialized in orders */
+	ElevPosRequest      chan ElevPos_t
 	NewOrdersChan    	chan Order_t 
 	ExecdOrderChan  	chan Order_t	
 	ExecRequestChan  	chan Order_t	
@@ -105,6 +106,7 @@ type Fsm_ExtComs_s struct{
 	SetLightChan      chan<- Light_t
 	SetFloorIndChan   chan<- int 
 	/* Channels from orders*/
+	ElevPosRequest      chan ElevPos_t
 	NewOrdersChan		chan Order_t 
 	ExecdOrderChan		chan Order_t	
 	ExecRequestChan		chan Order_t	

@@ -27,6 +27,7 @@ func Init(driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManager_ExtComs
 	extcoms.ButtonChan	= driver.ButtonChan
 	extcoms.SetLightChan = driver.SetLightChan
 
+    extcoms.ElevPosRequest      = make(chan elevTypes.ElevPos_t)
 	extcoms.NewOrdersChan		= make(chan elevTypes.Order_t)
 	extcoms.ExecdOrderChan  	= make(chan elevTypes.Order_t)
 	extcoms.ExecRequestChan  	= make(chan elevTypes.Order_t)		
@@ -59,8 +60,7 @@ func (self *Orders_s)orderHandler(){
 
 		case order:= <-self.ExtComs.RequestScoreChan:
 		    fmt.Println("			order.orderHandler: recieved on RequestScoreChan, order: ",order) 
-			//get elevPos
-			elevPos := elevTypes.ElevPos_t{}
+			elevPos:= self.get_elev_pos()
 			score := getScore(order, elevPos, self.queues[MY_IP]) 
 			self.ExtComs.RespondScoreChan <- score
 			
@@ -192,6 +192,14 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 		self.ExtComs.NewOrdersChan <- order
 	}
 }
+
+func (self *Orders_s)get_elev_pos() elevTypes.ElevPos_t{
+    pos := elevTypes.ElevPos_t{}
+    self.ExtComs.ElevPosRequest <- pos
+    pos =<-self.ExtComs.ElevPosRequest
+    return pos
+}
+
 
 func (self *Orders_s)isQueueEmpty() bool{
 	fmt.Println("			Checking queue...")
@@ -340,7 +348,6 @@ func countOrders(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool) int{
 	}
 	return count
 }
-
 
 func getScore(order elevTypes.Order_t, elev elevTypes.ElevPos_t, queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool) int{
     order_already_added := doesExist(order, queue) 
