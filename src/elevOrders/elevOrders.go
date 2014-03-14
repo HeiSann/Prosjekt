@@ -71,13 +71,15 @@ func (self *Orders_s)orderHandler(){
 		    }
 		    
 		/* from FSM */
-		case order:= <-self.ExtComs.ExecdOrderChan:
+		case elevPos:= <-self.ExtComs.ExecdOrderChan:
+			queue := self.queues[self.MY_IP]
+			order := getOrderAtPos(elevPos, queue)
 			fmt.Println("			orders.orderHandler: got execdOrder: ", order)
 			self.update_queue(order, self.MY_IP)
 			fmt.Println("			orders.orderHandler: updating queue success! trying to send: self.ExtComs.SendOrderUpdate <- order. ChanID: ", self.ExtComs.SendOrderUpdate)
 			self.ExtComs.SendOrderUpdate <- order
 			fmt.Println("			orders.orderHandler: orderUpdate sendt! trying to check nextOrder")
-			nextOrder:= get_next_order(self.queues[self.MY_IP], order)
+			nextOrder:= get_next_order(queue, order)
 			fmt.Println("			orders.orderHandler: got execdOrder: ", order)
 			if nextOrder.Active{
 			    self.ExtComs.NewOrdersChan <- nextOrder
@@ -127,6 +129,7 @@ func doesExist(order elevTypes.Order_t, queue [elevTypes.N_FLOORS][elevTypes.N_D
             return queue[order.Floor][elevTypes.UP] || queue[order.Floor][elevTypes.NONE]|| queue[order.Floor][elevTypes.DOWN]
     }
 }
+
 
 func is_last_order_in_dir(order elevTypes.Order_t, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]bool) bool{
     fmt.Println("			order.should_turn: checking for order: ",order)
@@ -187,8 +190,7 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 	            self.delete_order(order, IP)
 	        }
 	}
-	
-	//fmt.Println("			queue value set OK!")
+
 	if wasEmpty && IP == self.MY_IP{
 		fmt.Println("			orders.update_queue: sending order to fsm on NewOrderChan!")
 		self.ExtComs.NewOrdersChan <- order
@@ -215,6 +217,19 @@ func (self *Orders_s)get_elev_pos() elevTypes.ElevPos_t{
     return pos
 }
 
+func getOrderAtPos(elevPos elevTypes.ElevPos_t, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]bool){
+	if queue[elevPos.Floor][elevPos.Direction]{
+		return elevTypes.Order_t{elevPos.Floor, elevPos.Direction, true}
+	}else if queue[elevPos.Floor][elevTypes.NONE]{
+		return elevTypes.Order_t{elevPos.Floor, elevTypes.NONE, true}
+	}else if queue[elevPos.Floor][elevTypes.UP]{
+		return elevTypes.Order_t{elevPos.Floor, elevTypes.NONE, true}
+	}else if queue[elevPos.Floor][elevTypes.DOWN]{
+		return elevTypes.Order_t{elevPos.Floor, elevTypes.DOWN, true}
+	}else{
+		return 	elevTypes.Order_t{}
+	}
+}
 
 func (self *Orders_s)isQueueEmpty(ip string) bool{
 	fmt.Println("			Checking queue...")
@@ -385,13 +400,6 @@ func countOrders(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool) int{
 func getScore(order elevTypes.Order_t, elev elevTypes.ElevPos_t, queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool) int{
     order_already_added := doesExist(order, queue) 
 	n_order := countOrders(queue)
-
-	//if elev is at end floor, is has to turn:
-	/*	
-	if elev.Floor == 0 || elev.Floor == elevTypes.N_FLOORS-1{
-		elev.Direction = elevTypes.NONE
-	}
-	*/
 
     //Empty queue
     if n_order == 0{
