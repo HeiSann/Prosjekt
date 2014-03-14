@@ -55,7 +55,7 @@ func (coms *ComsManager_s)auction(order elevTypes.Order_t){
     limit:=time.Now().Add(time.Millisecond*AUCTION_DURATION)
     
     cost:=coms.getMyCost(order)
-    fmt.Println("\t auction: got cost", cost) //debug
+    fmt.Println("\t auction: got own cost", cost) //debug
 	winner:=coms.Ip
 	fmt.Println("\t auction: will read on channel:",coms.intComs.newCostMsg)
 	for{
@@ -84,19 +84,19 @@ func (coms *ComsManager_s)auction(order elevTypes.Order_t){
 }
 
 func (self *ComsManager_s)HandleAuctionWinner(winner string, order elevTypes.Order_t ){  
+	toAllUpdate := constructUpdateMsg(self.Ip ,order,winner)
+	
 	if winner==self.Ip{
 		self.ExtComs.AddOrder<-order
-		fmt.Println("\t HandleAuctionWinner: sendt winner=self",winner)
-	}
+		fmt.Println("\t HandleAuctionWinner: sendt winner=self to self",winner)
+	}else if winner!=self.Ip{
+		self.ExtComs.RecvOrderUpdate<-toAllUpdate //send update to self, in case other elevators die not gettin update
+		msg:= constructNewOrderMsg(winner,self.Ip, order)
+		self.ExtComs.SendMsg<-msg //send msg to winner of auction
+		fmt.Println("\t HandleAuctionWinner: sendt winner to winner:",winner)
+	}	
 	
-	
-	msg:= constructNewOrderMsg(winner,self.Ip, order)
-	self.ExtComs.SendMsg<-msg
-	fmt.Println("\t HandleAuctionWinner: send order to winner", winner)
-	
-	toAll := constructUpdateMsg(self.Ip ,order,winner)
-	fmt.Println("\t HandleAuctionWinner:constructed update msg, trying to send on channel:", self.ExtComs.SendMsgToAll)
-	self.ExtComs.SendMsgToAll<-toAll	
+	self.ExtComs.SendMsgToAll<-toAllUpdate	//update alle elvators about the winner
 	fmt.Println("\t HandleAuctionWinner: send update on tcp to all",winner)
 	
 }	
