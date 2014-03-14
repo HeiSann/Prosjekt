@@ -342,15 +342,33 @@ func get_next_order(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool,order elevTy
                 return order_down_above}
             /*  no orders left  */
             return elevTypes.Order_t{}
+
+		case elevTypes.NONE:
+			order_up_above := next_order_above(order.Floor, queue)
+            if order_up_above.Active { 
+                fmt.Println("			order.get_next_order: returning order_up_above: ", order_up_above)
+                return order_up_above }
+
+			order_down_below := next_order_below(order.Floor, queue)
+			if order_down_below.Active { 
+                fmt.Println("			order.get_next_order: returning order_down_below: ", order_down_below)
+                return order_down_below }
+
+			order_down_above := next_order_below(elevTypes.N_FLOORS-1, queue)
+            if order_down_above.Active{ 
+                fmt.Println("			order.get_next_order: returning order_down_above: ", order_down_above)
+                return order_down_above}
+
+			order_up_below := next_order_above(0, queue)
+            if order_up_below.Active { 
+                fmt.Println("			order.get_next_order: returning order_up_below: ", order_up_below)
+                return order_up_below }
+			return elevTypes.Order_t{}
         default:
             fmt.Println("			order.get_next_order: dir on request = NONE. this when first order is same floor")
             return order
     }
 }  
-
-
-func clear_list(){
-}
 
 func countOrders(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool) int{
 	count := 0
