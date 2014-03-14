@@ -42,6 +42,7 @@ type Net_ExtComs_s struct{
 	SendBcast chan Message
 	PingMsg chan Message
 	SendMsgToAll chan Message
+	DeadElev chan string
 }
 
 type ComsManager_ExtComs_s struct{
@@ -61,6 +62,7 @@ type ComsManager_ExtComs_s struct{
 	SendBcast chan Message
 	PingMsg chan Message
 	SendMsgToAll chan Message
+	DeadElev chan string
 }
 
 type Orders_ExtComs_s struct{
