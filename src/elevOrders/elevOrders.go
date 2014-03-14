@@ -65,14 +65,15 @@ func (self *Orders_s)orderHandler(){
 		    
 		/* from FSM */
 		case elevPos:= <-self.ExtComs.ExecdOrderChan:
-			queue := self.queues[self.MY_IP]
-			order := getOrderAtPos(elevPos, queue)
-			fmt.Println("			orders.orderHandler: got execdOrder: ", order)
+			fmt.Println("			orders.orderHandler: got execdorder at Pos: ", elevPos)			
+			order := getOrderAtPos(elevPos, self.queues[self.MY_IP])
+			order.Active = false
+			fmt.Println("			orders.orderHandler: found execdOrder: ", order)
 			self.update_queue(order, self.MY_IP)
 			fmt.Println("			orders.orderHandler: updating queue success! trying to send: self.ExtComs.SendOrderUpdate <- order. ChanID: ", self.ExtComs.SendOrderUpdate)
 			self.ExtComs.SendOrderUpdate <- order
 			fmt.Println("			orders.orderHandler: orderUpdate sendt! trying to check nextOrder")
-			nextOrder:= get_next_order(queue, order)
+			nextOrder:= get_next_order(self.queues[self.MY_IP], order)
 			fmt.Println("			orders.orderHandler: got execdOrder: ", order)
 			if nextOrder.Active{
 			    self.ExtComs.NewOrdersChan <- nextOrder
@@ -82,9 +83,12 @@ func (self *Orders_s)orderHandler(){
 		case elevPos:= <-self.ExtComs.ExecRequestChan:
 			fmt.Println("			orders.orderHandler: got execRequest: ", elevPos)
 			queue := self.queues[self.MY_IP]
-			this_order:= getOrderAtPos(elevPos, queue) 
-			next_order:= get_next_order(queue, this_order)
-			if this_order.Floor == next_order.Floor{
+			order := elevTypes.Order_t{elevPos.Floor, elevPos.Direction, false}
+			//this_order:= getOrderAtPos(elevPos, queue) 
+			next_order:= get_next_order(queue, order)
+			fmt.Println("			orders.orderHandler: elevPos: ", elevPos)
+			fmt.Println("			orders.orderHandler: next_order: ", next_order)
+			if elevPos.Floor == next_order.Floor{
 			    fmt.Println("			orders.orderHandler: sending true on execResponse ")
 				self.ExtComs.ExecResponseChan <- true
 			}else{
@@ -167,12 +171,11 @@ func getOrderAtPos(elevPos elevTypes.ElevPos_t, queue[elevTypes.N_FLOORS][elevTy
 		return elevTypes.Order_t{elevPos.Floor, elevPos.Direction, true}
 	}else if queue[elevPos.Floor][elevTypes.NONE]{
 		return elevTypes.Order_t{elevPos.Floor, elevTypes.NONE, true}
-/*	
 	}else if queue[elevPos.Floor][elevTypes.UP]{
+
 		return elevTypes.Order_t{elevPos.Floor, elevTypes.NONE, true}
 	}else if queue[elevPos.Floor][elevTypes.DOWN]{
-		return elevTypes.Order_t{elevPos.Floor, elevTypes.DOWN, true}
-*/	
+		return elevTypes.Order_t{elevPos.Floor, elevTypes.DOWN, true}	
 	}else{
 		return 	elevTypes.Order_t{}
 	}
@@ -201,30 +204,25 @@ func (self *Orders_s)delete_order(order elevTypes.Order_t, IP string){
 	
 	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false} 
 	self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, false}
+	fmt.Println("           delete_order: deleted ", order)
+	fmt.Println("           delete_order: deleted ", elevTypes.Order_t{order.Floor, elevTypes.NONE, false})
 }
 
 func (self *Orders_s)delete_all_orders_on_floor(order elevTypes.Order_t, IP string){
     queue := self.queues[IP]
-   	switch order.Floor{
-   	    case 0:
-   	        queue[order.Floor][elevTypes.NONE] = false
-   	        queue[order.Floor][elevTypes.UP] = false
-   	        self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
-   	        self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.UP, false}
-   	    case elevTypes.N_FLOORS-1:
-   	        queue[order.Floor][elevTypes.NONE] = false
-   	        queue[order.Floor][elevTypes.DOWN] = false
-   	        self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
-   	        self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.DOWN, false}
-   	    default:
-   	        queue[order.Floor][elevTypes.NONE] = false
-   	        queue[order.Floor][elevTypes.UP] = false
-   	        queue[order.Floor][elevTypes.DOWN] = false
-   	        self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
-   	        self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.UP, false}
-   	        self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.DOWN, false}
+   	if order.Floor == 0 || order.Floor == elevTypes.N_FLOORS-1{
+   		self.delete_order(order, IP)
+	}else{
+		queue = self.queues[IP]
+        queue[order.Floor][elevTypes.NONE] = false
+        queue[order.Floor][elevTypes.UP] = false
+        queue[order.Floor][elevTypes.DOWN] = false
+		self.queues[IP] = queue
+        self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
+        self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.UP, false}
+        self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.DOWN, false}
    	}
-   	self.queues[IP] = queue
+   	
 }
 
 func next_order_above(this_floor int, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]bool) elevTypes.Order_t{
@@ -267,6 +265,7 @@ func next_order_below(this_floor int, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]
 
 func get_next_order(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool,order elevTypes.Order_t) elevTypes.Order_t{
     fmt.Println("			order.get_next_order: with dir: ", order.Direction)
+	fmt.Println("			order.get_next_order: queue is now: ", queue)
     switch(order.Direction){
         case elevTypes.UP:
             order_up_above := next_order_above(order.Floor, queue)
