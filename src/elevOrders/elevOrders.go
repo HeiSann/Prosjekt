@@ -20,8 +20,8 @@ func Init(ip string,driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManag
 	tableMap := make(map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool)
 	var extcoms = elevTypes.Orders_ExtComs_s{}
 
-	extcoms.ButtonChan	= driver.ButtonChan
-	extcoms.SetLightChan = driver.SetLightChan
+	extcoms.ButtonChan			= driver.ButtonChan
+	extcoms.SetLightChan 		= driver.SetLightChan
     extcoms.ElevPosRequest      = make(chan elevTypes.ElevPos_t)
 	extcoms.NewOrdersChan		= make(chan elevTypes.Order_t)
 	extcoms.ExecdOrderChan  	= make(chan elevTypes.ElevPos_t)
