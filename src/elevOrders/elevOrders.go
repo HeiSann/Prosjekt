@@ -69,15 +69,13 @@ func (self *Orders_s)orderHandler(){
 		    }
 		    
 		/* from FSM */
-		case order_raw:= <-self.ExtComs.ExecdOrderChan:
-			queue := self.queues[self.MY_IP]
-			order := do_conditioning(order_raw, queue)
+		case order:= <-self.ExtComs.ExecdOrderChan:
 			fmt.Println("			orders.orderHandler: got execdOrder: ", order)
 			self.update_queue(order, self.MY_IP)
 			fmt.Println("			orders.orderHandler: updating queue success! trying to send: self.ExtComs.SendOrderUpdate <- order. ChanID: ", self.ExtComs.SendOrderUpdate)
 			self.ExtComs.SendOrderUpdate <- order
 			fmt.Println("			orders.orderHandler: orderUpdate sendt! trying to check nextOrder")
-			nextOrder:= get_next_order(queue, order)
+			nextOrder:= get_next_order(self.queues[self.MY_IP], order)
 			fmt.Println("			orders.orderHandler: got execdOrder: ", order)
 			if nextOrder.Active{
 			    self.ExtComs.NewOrdersChan <- nextOrder
@@ -104,16 +102,15 @@ func (self *Orders_s)orderHandler(){
 		case button := <-self.ExtComs.ButtonChan:
 			fmt.Println("			order.orderHandler: got button press!", button)
 			order := elevTypes.Order_t{button.Floor, button.Dir, true}
-			order_is_duplicate:= false
 			for ip, queue := range self.queues{
 				if doesExist(order, queue){
 					fmt.Println("			order.orderHandler: order already is handled by ", ip)
-					order_is_duplicate = true
+					break
 				}
 			}
 			if order.Direction == elevTypes.NONE{
 				self.update_queue(order, self.MY_IP)
-			} else if !order_is_duplicate{
+			} else{
 			fmt.Println("			order.orderHandler: Oh how exciting!! order is NEW! sending to auction! ")
 			self.ExtComs.AuctionOrder <- order
 			}
@@ -223,18 +220,6 @@ func (self *Orders_s)get_elev_pos() elevTypes.ElevPos_t{
     return pos
 }
 
-func do_conditioning(order elevTypes.Order_t, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]bool)elevTypes.Order_t{
-	if doesExist(order, queue){
-		return order
-	}else{
-		rev_order:= getReverseOrder(order)
-		if doesExist(rev_order, queue){
-			return rev_order
-		}
-	}
-	fmt.Println("			orders.do_conditioning: illegal dir!")
-	return order
-}
 
 func (self *Orders_s)isQueueEmpty(ip string) bool{
 	fmt.Println("			Checking queue...")
