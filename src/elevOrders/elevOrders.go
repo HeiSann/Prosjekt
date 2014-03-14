@@ -18,6 +18,8 @@ func Init(ip string,driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManag
 	fmt.Println("			elevOrders.init()...")
    
 	tableMap := make(map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool)
+	//var table [elevTypes.N_FLOORS][elevTypes.N_DIR] bool
+	//tableMap["MY_IP"] = table
 
 	var extcoms = elevTypes.Orders_ExtComs_s{}
 
@@ -102,16 +104,9 @@ func (self *Orders_s)orderHandler(){
 		case button := <-self.ExtComs.ButtonChan:
 			fmt.Println("			order.orderHandler: got button press!", button)
 			order := elevTypes.Order_t{button.Floor, button.Dir, true}
-			for ip, queue := range self.queues{
-				if doesExist(order, queue){
-					fmt.Println("			order.orderHandler: order already is handled by ", ip)
-					break
-				}
-			}
 			if order.Direction == elevTypes.NONE{
 				self.update_queue(order, self.MY_IP)
 			} else{
-			fmt.Println("			order.orderHandler: Oh how exciting!! order is NEW! sending to auction! ")
 			self.ExtComs.AuctionOrder <- order
 			}
 		}
