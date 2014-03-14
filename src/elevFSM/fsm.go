@@ -69,7 +69,7 @@ func (self *Fsm_s)action_check_order(){
 	self.ExtComs.SetFloorIndChan <- self.lastFloor
 	fmt.Println("				fsm.action_check_order: floorIndSignal sendt")
 	
-	current := elevTypes.Order_t{self.lastFloor, self.lastDir, true}
+	current := elevTypes.ElevPos_t{self.lastFloor, self.lastDir, true}
 	self.ExtComs.ExecRequestChan <- current
 	fmt.Println("				fsm.action_check_order: sendt to orders on Ext.Coms.ExecRecuest: ", current)
 }

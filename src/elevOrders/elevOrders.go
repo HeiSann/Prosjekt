@@ -18,21 +18,16 @@ func Init(ip string,driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManag
 	fmt.Println("			elevOrders.init()...")
    
 	tableMap := make(map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool)
-	//var table [elevTypes.N_FLOORS][elevTypes.N_DIR] bool
-	//tableMap["MY_IP"] = table
-
 	var extcoms = elevTypes.Orders_ExtComs_s{}
 
 	extcoms.ButtonChan	= driver.ButtonChan
 	extcoms.SetLightChan = driver.SetLightChan
-
     extcoms.ElevPosRequest      = make(chan elevTypes.ElevPos_t)
 	extcoms.NewOrdersChan		= make(chan elevTypes.Order_t)
-	extcoms.ExecdOrderChan  	= make(chan elevTypes.Order_t)
-	extcoms.ExecRequestChan  	= make(chan elevTypes.Order_t)		
+	extcoms.ExecdOrderChan  	= make(chan elevTypes.ElevPos_t)
+	extcoms.ExecRequestChan  	= make(chan elevTypes.ElevPos_t)		
 	extcoms.ExecResponseChan	= make(chan bool)
 	extcoms.EmgTriggerdChan  	= make(chan bool)
-	
 	extcoms.AuctionOrder		= coms.AuctionOrder
 	extcoms.RequestScoreChan	= coms.RequestCost
 	extcoms.RespondScoreChan	= coms.RecvCost
@@ -41,9 +36,7 @@ func Init(ip string,driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManag
 	extcoms.RecvOrderUpdate 	= coms.RecvOrderUpdate
 
 	orders := Orders_s{ip, tableMap, false, extcoms}
-
 	go orders.orderHandler()
-
  	fmt.Println("			orders.init: OK!")
    return orders
 }
@@ -86,11 +79,12 @@ func (self *Orders_s)orderHandler(){
 			    fmt.Println("			orders.orderHandler: next order sendt to fsm: ", nextOrder)
 			}
 
-		case order:= <-self.ExtComs.ExecRequestChan:
-			fmt.Println("			orders.orderHandler: got execRequest: ", order)
+		case elevPos:= <-self.ExtComs.ExecRequestChan:
+			fmt.Println("			orders.orderHandler: got execRequest: ", elevPos)
 			queue := self.queues[self.MY_IP]
-			shouldExec := (doesExist(order, queue) || is_last_order_in_dir(order, queue)) 
-			if shouldExec{
+			this_order:= getOrderAtPos(elevPos, queue) 
+			next_order:= get_next_order(queue, this_order)
+			if this_order.Floor == next_order.Floor{
 			    fmt.Println("			orders.orderHandler: sending true on execResponse ")
 				self.ExtComs.ExecResponseChan <- true
 			}else{
@@ -114,55 +108,6 @@ func (self *Orders_s)orderHandler(){
 		}
 		time.Sleep(time.Millisecond*elevTypes.SLOW_DOWM_MUTHA_FUKKA)
 	}
-}
-
-func doesExist(order elevTypes.Order_t, queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool) bool{
-    switch(order.Direction){
-        case elevTypes.UP:
-            return queue[order.Floor][elevTypes.UP] || queue[order.Floor][elevTypes.NONE]
-        case elevTypes.DOWN:
-            return queue[order.Floor][elevTypes.DOWN] || queue[order.Floor][elevTypes.NONE]
-        case elevTypes.NONE:
-            fmt.Println("			order.doesExist: order.dir = NONE; this probably shouldn't happen?")
-            return true
-        default:
-            return queue[order.Floor][elevTypes.UP] || queue[order.Floor][elevTypes.NONE]|| queue[order.Floor][elevTypes.DOWN]
-    }
-}
-
-
-func is_last_order_in_dir(order elevTypes.Order_t, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]bool) bool{
-    fmt.Println("			order.should_turn: checking for order: ",order)
-    switch order.Direction{
-        case elevTypes.UP:
-            fmt.Println("			order.should_turn: UP ")
-            if order.Floor == elevTypes.N_FLOORS-1{
-                fmt.Println("			order.should_turn: at top floor! returning true ")
-                return true
-            }
-            for floor:= order.Floor+1; floor < elevTypes.N_FLOORS; floor ++{
-                if queue[floor][elevTypes.UP] || queue[floor][elevTypes.DOWN] ||queue[floor][elevTypes.NONE]{
-                    fmt.Println("			order.should_turn: found order above, returning false ",order.Floor)
-                    return false
-                }
-            }
-            fmt.Println("			order.should_turn: returning true by semidef ")
-            return true
-        case elevTypes.DOWN:
-            fmt.Println("			order.should_turn: DOWN ")
-            if order.Floor == 0 {return true}
-            for floor:= order.Floor-1; floor >= 0; floor --{
-                if queue[floor][elevTypes.UP] || queue[floor][elevTypes.DOWN] ||queue[floor][elevTypes.NONE]{
-                    fmt.Println("			order.should_turn: found order below, returning false ",order)
-                    return false
-                }
-            }
-            return true
-        
-        default:
-            fmt.Println("			orders.should_turn: order.dir == NONE, this probably shouldnt happen?")
-            return true
-    }
 }
 
 func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
@@ -217,15 +162,17 @@ func (self *Orders_s)get_elev_pos() elevTypes.ElevPos_t{
     return pos
 }
 
-func getOrderAtPos(elevPos elevTypes.ElevPos_t, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]bool){
+func getOrderAtPos(elevPos elevTypes.ElevPos_t, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]bool) elevTypes.Order_t{
 	if queue[elevPos.Floor][elevPos.Direction]{
 		return elevTypes.Order_t{elevPos.Floor, elevPos.Direction, true}
 	}else if queue[elevPos.Floor][elevTypes.NONE]{
 		return elevTypes.Order_t{elevPos.Floor, elevTypes.NONE, true}
+/*	
 	}else if queue[elevPos.Floor][elevTypes.UP]{
 		return elevTypes.Order_t{elevPos.Floor, elevTypes.NONE, true}
 	}else if queue[elevPos.Floor][elevTypes.DOWN]{
 		return elevTypes.Order_t{elevPos.Floor, elevTypes.DOWN, true}
+*/	
 	}else{
 		return 	elevTypes.Order_t{}
 	}
@@ -398,7 +345,7 @@ func countOrders(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool) int{
 }
 
 func getScore(order elevTypes.Order_t, elev elevTypes.ElevPos_t, queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool) int{
-    order_already_added := doesExist(order, queue) 
+    order_already_added := queue[order.Floor][order.Direction] || queue[order.Floor][elevTypes.NONE]
 	n_order := countOrders(queue)
 
     //Empty queue
