@@ -6,7 +6,7 @@ import(
 	"math"
 	"elevTypes"
 )
-
+//
 type Orders_s struct{
     MY_IP           string
 	queues			map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool
