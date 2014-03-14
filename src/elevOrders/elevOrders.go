@@ -386,7 +386,7 @@ func getScore(order elevTypes.Order_t, elev elevTypes.ElevPos_t, queue [elevType
     order_already_added := doesExist(order, queue) 
 	n_order := countOrders(queue)
     //Empty queue
-    if elev.Direction == elevTypes.NONE{
+    if n_order == 0{
 		ansFloat := float64(order.Floor) - float64(elev.Floor)
 		return 0 + int(math.Abs(ansFloat))
 
