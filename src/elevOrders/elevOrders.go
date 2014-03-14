@@ -157,18 +157,6 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 	fmt.Println("           queues are now: ", self.queues)
 }
 
-func getReverseOrder(order elevTypes.Order_t) elevTypes.Order_t{
-    switch order.Direction{
-        case elevTypes.UP:
-            return elevTypes.Order_t{order.Floor, elevTypes.DOWN, order.Active}
-        case elevTypes.DOWN:
-            return elevTypes.Order_t{order.Floor, elevTypes.UP, order.Active}
-        default:
-            fmt.Println("			orders.updating_queue: order.Dir = NONE, probably shouldn't happen?")
-            return elevTypes.Order_t{order.Floor, elevTypes.NONE,  order.Active}
-    }
-}
-
 func (self *Orders_s)get_elev_pos() elevTypes.ElevPos_t{
     pos := elevTypes.ElevPos_t{}
     self.ExtComs.ElevPosRequest <- pos
