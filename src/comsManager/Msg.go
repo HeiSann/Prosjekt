@@ -26,8 +26,7 @@ func (comsMan *ComsManager_s)RecieveMessageFromNet(){
 		  		cost :=comsMan.getMyCost(msg.Order) //remember if only cost<cost
 		  		costMsg:=constructCostMsg(comsMan.Ip, msg.From, msg.Order, cost)
 		  		comsMan.ExtComs.SendMsg<-costMsg
-		  		fmt.Println("\t sendt my cost to the elevator requiring it", costMsg.Payload)
-		  		
+		  		fmt.Println("\t sendt my cost to the elevator requiring it", costMsg.Payload)		  		
 
 		  case "ADD_ORDER":
 		  		comsMan.ExtComs.AddOrder<-msg.Order
@@ -61,7 +60,7 @@ func (self *ComsManager_s)TcpSenderTest(to string){
 }
 
 
-func (self *ComsManager_s)ForwardMessageFromOrder(){
+func (self *ComsManager_s)ForwardMessageFromOrder(){ //change name
 	for{
 		select{
 		case order:=<- self.ExtComs.SendOrderUpdate:
@@ -71,9 +70,11 @@ func (self *ComsManager_s)ForwardMessageFromOrder(){
 			fmt.Println("\t comsManager.ForwardMessageFromOrder: sendt msg self.ExtComs.SendMsgToAll<-msg, msg=", msg)
 		case order:=<-self.intComs.needCost:
 			needCostMsg:=constructNeedCostMsg(self.Ip, order)
-    		fmt.Println("\t comsManager: costMsg created. Trying to send")
+    		fmt.Println("\t comsManager: needcostMsg created. Trying to send")
     		self.ExtComs.SendMsgToAll<-needCostMsg
-    		fmt.Println("\t comsManager: send need cost Msg to all tcp elevators")		
+    		fmt.Println("\t comsManager: send need cost Msg to all tcp elevators")	
+    	case deadIp:=<-self.ExtComs.DeadElev:
+    		fmt.Println("\t ForwardMsg: dead ip=",deadIp)
 		default:
 			time.Sleep(time.Millisecond*SELECT_SLEEP_TIME)
 		}

@@ -96,8 +96,8 @@ func (toManager *InternalChan_s)SendTcpMsg(msg elevTypes.Message, tcpConnections
 		}
 	case false:
 		fmt.Println("error, not a connection, trying to connect")
-		toManager.connectToElev<-msg.To
-		
+		//toManager.connectToElev<-msg.To
+		go toManager.reConnectAndSend(msg, tcpConnections)
 	}
 }	
 
@@ -169,3 +169,23 @@ func getConIp(con net.Conn)(ip string){
 	return conIp
 	
 }
+
+func (intchan InternalChan_s)reConnectAndSend(msg elevTypes.Message, tcpConnections map[string]net.Conn){
+	intchan.ConnectElev(msg.To)
+	ipAddr := msg.To
+	bstream, _ := json.Marshal(msg)
+	con, ok :=tcpConnections[ipAddr]
+	switch ok{
+	case true:
+		_, err := con.Write(bstream)
+		if err!=nil{
+			fmt.Println("failed to send msg")
+		}else{
+			fmt.Println("msg ok")
+		}
+	case false:
+		fmt.Println("error, not a connection, elev lost")
+	}
+}
+	
+	

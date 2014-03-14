@@ -5,7 +5,7 @@ import( "time"
 
        )
 const PING_TIMEOUT_MILLI = 70
-const SLEEP_TIME = 30
+const SLEEP_TIME = 20
 const LIMIT = 50000000
 
 
@@ -34,7 +34,7 @@ func (elevNet *ElevNet_s) RefreshNetwork(){
 						
         case deadIp := <-elevNet.intComs.deadPinger:
         	fmt.Println("ping case deadIP")
-            elevNet.intComs.deletePinger(elevPingTimes,deadIp)
+            elevNet.deletePinger(elevPingTimes,deadIp)
 		default:
 			time.Sleep(time.Millisecond*SLEEPTIME)
                     
@@ -73,17 +73,18 @@ func (toRefresh *InternalChan_s)performTimeControl(pingMap map[string]time.Time)
     }
 }
 
-func (toTcp *InternalChan_s)deletePinger(pingMap map[string]time.Time, ip string){
+func (self *ElevNet_s)deletePinger(pingMap map[string]time.Time, ip string){
 	delete(pingMap,ip)
-	toTcp.deadElev<-ip	
+	self.intComs.deadElev<-ip	
+	self.ExtComs.DeadElev<-ip
 }
 
 func (toNet *ElevNet_s) BroadCastPing(){
 	
 	myIp:=GetMyIP()
 	destIp:=GetBroadcastIP(myIp)
-	for{	
-		msg:=ConstructPing(destIp,myIp)
+	msg:=ConstructPing(destIp,myIp)
+	for{			
 		toNet.ExtComs.SendBcast<-msg
 		//fmt.Println("bcast sendt")
 		time.Sleep(time.Millisecond*SLEEP_TIME)
