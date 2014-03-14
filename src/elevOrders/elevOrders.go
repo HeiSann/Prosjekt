@@ -385,6 +385,12 @@ func countOrders(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool) int{
 func getScore(order elevTypes.Order_t, elev elevTypes.ElevPos_t, queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool) int{
     order_already_added := doesExist(order, queue) 
 	n_order := countOrders(queue)
+
+	//if elev is at end floor, is has to turn:
+ 	if elev.Floor == 0 || elev.Floor == elevTypes.N_FLOORS-1{
+ 		elev.Direction = elevTypes.NONE
+ 	}
+
     //Empty queue
     if n_order == 0{
 		ansFloat := float64(order.Floor) - float64(elev.Floor)
