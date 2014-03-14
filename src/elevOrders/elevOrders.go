@@ -133,20 +133,23 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 			fmt.Println("			orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
 		case false:
 		    if IP == self.MY_IP{ 
+				self.delete_order(order, IP)
+
 		        next_order := get_next_order(self.queues[IP], order)
-			    if next_order.Floor == order.Floor{
-			        also_execd := getReverseOrder(order)
+				//check for double-order executions
+				fmt.Println("			orders.updating_queue: order was: ", order)
+				fmt.Println("			orders.updating_queue: next_order is: ", next_order)
+			 
+			    if (next_order.Floor == order.Floor ){
+					fmt.Println("			orders.updating_queue: Double exec!")
+			        also_execd := next_order
 			        self.ExtComs.SendOrderUpdate <- also_execd
-			        
-			        self.delete_all_orders_on_floor(order, IP)
-			     }else{	
-			        self.delete_order(order, IP)
+			        self.delete_order(also_execd, IP)
 			    }
 	        }else{
 	            self.delete_order(order, IP)
 	        }
 	}
-
 	if wasEmpty && IP == self.MY_IP{
 		fmt.Println("			orders.update_queue: sending order to fsm on NewOrderChan!")
 		self.ExtComs.NewOrdersChan <- order
@@ -188,17 +191,17 @@ func getOrderAtPos(elevPos elevTypes.ElevPos_t, queue[elevTypes.N_FLOORS][elevTy
 }
 
 func (self *Orders_s)isQueueEmpty(ip string) bool{
-	fmt.Println("			Checking queue...")
+	//fmt.Println("			Checking queue...")
 	queue:= self.queues[ip]
 	for floor:=0; floor< elevTypes.N_FLOORS; floor++{
 		for dir:=0; dir< elevTypes.N_DIR; dir++{
 			if	queue[floor][dir] == true{
-				fmt.Println("			queue not empty!")
+				//fmt.Println("			queue not empty!")
 				return false
 			}
 		}
 	}
-	fmt.Println("			queue empty!")
+	//fmt.Println("			queue empty!")
 	return true
 }	
 
