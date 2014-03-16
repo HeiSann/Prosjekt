@@ -82,7 +82,12 @@ func (self *ComsManager_s)InternalCommunication(){ //change name
 			self.ExtComs.AuctionDeadElev<-deadIp		
 
 		case newIp :=<-self.ExtComs.NewElev:
-			self.ExtComs.CheckNewElev<-newIp
+			newElevUpdate:=constructNewOrderMsg(newIp, self.Ip, elevTypes.Order_t{})
+			self.ExtComs.CheckNewElev<-newElevUpdate
+			fmt.Println("InternalCommunication: commanded order to check if new elevator has any inside orders:", newIp)
+			
+		case msg:=<-self.ExtComs.UpdateElevInside:
+			self.ExtComs.SendMsg<-msg
 
 		default:
 			time.Sleep(time.Millisecond*SELECT_SLEEP_TIME)

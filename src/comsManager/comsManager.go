@@ -52,7 +52,8 @@ func ExternalChannelsInit(net elevTypes.Net_ExtComs_s)elevTypes.ComsManager_ExtC
 	extChans.SendOrderUpdate = make(chan elevTypes.Order_t)
 	extChans.RecvOrderUpdate = make(chan elevTypes.Message)
 	extChans.AuctionDeadElev =make(chan string)
-	extChans.CheckNewElev = make(chan string)
+	extChans.CheckNewElev = make(chan elevTypes.Message)
+	extChans.UpdateElevInside =make(chan elevTypes.Message,20)
 	
 	return extChans
 
