@@ -27,7 +27,7 @@ func (elevNet *ElevNet_s) RefreshNetwork(){
             fmt.Println("woho new elevator friend")
 	*/
         case msg := <-elevNet.ExtComs.PingMsg:
-			elevNet.intComs.updatePingTime(elevPingTimes,msg) 
+			elevNet.updatePingTime(elevPingTimes,msg) 
 						
         case <-elevNet.intComs.timerOut:
 			go elevNet.intComs.performTimeControl(elevPingTimes)
@@ -51,11 +51,12 @@ func addPinger(pingMap map[string]time.Time,ip string){
 	}
 }
 
-func (toTcp *InternalChan_s) updatePingTime(pingMap map[string]time.Time, msg elevTypes.Message){ //change name?
+func (self *ElevNet_s) updatePingTime(pingMap map[string]time.Time, msg elevTypes.Message){ //change name?
 	pingIP :=msg.From
 	_, inMap := pingMap[pingIP]
 	if !inMap{
-		toTcp.connectToElev<-pingIP
+		self.intComs.connectToElev<-pingIP
+		self.ExtComs.NewElev<-pingIP
 	}
 	limitStamp:=time.Now().Add(time.Millisecond*PING_TIMEOUT_MILLI)
 	pingMap[msg.From]=limitStamp

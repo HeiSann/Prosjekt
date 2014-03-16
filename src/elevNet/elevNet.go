@@ -48,6 +48,7 @@ func ExternalChannelsInit() elevTypes.Net_ExtComs_s{
 	extChans.PingMsg = make(chan elevTypes.Message)
 	extChans.SendMsgToAll =make(chan elevTypes.Message)
 	extChans.DeadElev =make(chan string)
+	extChans.NewElev = make(chan string)
 	return extChans
 }
 

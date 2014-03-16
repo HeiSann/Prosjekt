@@ -43,6 +43,7 @@ type Net_ExtComs_s struct{
 	PingMsg chan Message
 	SendMsgToAll chan Message
 	DeadElev chan string
+	NewElev chan string
 }
 
 type ComsManager_ExtComs_s struct{
@@ -56,6 +57,7 @@ type ComsManager_ExtComs_s struct{
 	SendOrderUpdate chan Order_t
 	RecvOrderUpdate chan Message
 	AuctionDeadElev chan string
+	CheckNewElev chan string
       
 	/*inited in net*/
 	RecvMsg chan Message
@@ -64,6 +66,7 @@ type ComsManager_ExtComs_s struct{
 	PingMsg chan Message
 	SendMsgToAll chan Message
 	DeadElev chan string
+	NewElev chan string
 }
 
 type Orders_ExtComs_s struct{
@@ -82,6 +85,7 @@ type Orders_ExtComs_s struct{
 	SendOrderUpdate 	chan Order_t
 	RecvOrderUpdate 	chan Message
 	AuctionDeadElev   chan string
+	CheckNewElev		chan string
 	/* Channels from driver */
 	ButtonChan        <-chan Button
 	SetLightChan      chan<- Light_t

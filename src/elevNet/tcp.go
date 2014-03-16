@@ -194,9 +194,16 @@ func (elevNet *ElevNet_s)reConnectAndSend(msg elevTypes.Message, tcpMap map[stri
 			break
 			}
 		}
+		if msg.Type=="ADD_ORDER"{
+			elevNet.ExtComs.RecvMsg<-msg
+			fmt.Println("reConnectAndSend:error int send msg. Taking order self")
+		}
+		
 	case false:
-		//elevNet<-
-		fmt.Println("reConnectAndSend:error, reConnectFailed")
-		//send addOrder msg back to elevator !!!
+		if msg.Type=="ADD_ORDER"{
+			elevNet.ExtComs.RecvMsg<-msg
+			fmt.Println("reConnectAndSend:error in connection, reConnectFailed, taking order self")
+			//send addOrder msg back to elevator !!!
+		}
 	}
 }
