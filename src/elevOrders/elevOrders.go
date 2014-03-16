@@ -81,7 +81,7 @@ func (self *Orders_s)orderHandler(){
 		    fmt.Println("			order.orderHandler: recieved on CheckNewElev, msg: ",msg)
 		    queue := self.queues[msg.To]
 		    fmt.Println("			order.orderHandler: gonna check this bitch's orders, the queue is: ",queue)
-		    for floor:=0 ; floor < elevTypes.N_FLOORS-1 ; floor++{
+		    for floor:=0 ; floor < elevTypes.N_FLOORS ; floor++{
 		        fmt.Println("			order.orderHandler: got order? ", queue[floor][elevTypes.NONE])
 		        if queue[floor][elevTypes.NONE]{
 		            msg.Order = elevTypes.Order_t{floor, elevTypes.NONE, true}
