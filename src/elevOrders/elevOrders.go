@@ -47,7 +47,7 @@ func Init(ip string,driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManag
 	
 	go orders.orderHandler()
  	fmt.Println("			orders.init: OK!")
-   return orders
+    return orders
 }
 
 func (self *Orders_s)orderHandler(){
@@ -197,8 +197,8 @@ func (self *Orders_s)handle_dead_elev(deadElev string){
 		                self.ExtComs.AuctionOrder <- elevTypes.Order_t{floor,elevTypes.DOWN,true}
 		            default:
 		                fmt.Println("			orders.handle_dead_elev: unknown dir!")
-		            queue[floor][dir] = false
 		        }
+		        queue[floor][dir] = false
 		    }
 		}
 	}
