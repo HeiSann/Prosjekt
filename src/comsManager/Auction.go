@@ -8,7 +8,7 @@ import ("elevTypes"
 
 
 const SELECT_SLEEP_TIME = 2
-const AUCTION_DURATION = 30
+const AUCTION_DURATION = 70
 		
 
 func (self *ComsManager_s)getMyCost(order elevTypes.Order_t)int{ 
