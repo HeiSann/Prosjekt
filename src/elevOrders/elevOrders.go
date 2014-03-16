@@ -74,14 +74,17 @@ func (self *Orders_s)orderHandler(){
 		    }
 		    
 		case deadElev:= <-self.ExtComs.AuctionDeadElev:
+		    fmt.Println("			order.orderHandler: recieved on AuctionDeadElev, deadElev: ",deadElev)
 		    self.handle_dead_elev(deadElev)
 		
 		case msg:= <-self.ExtComs.CheckNewElev:
+		    fmt.Println("			order.orderHandler: recieved on CheckNewElev, msg: ",msg)
 		    queue := self.queues[msg.To]
 		    for floor:=0 ; floor < elevTypes.N_FLOORS-1 ; floor++{
 		        if queue[floor][elevTypes.NONE]{
 		            msg.Order = elevTypes.Order_t{floor, elevTypes.NONE, true}
 		            self.ExtComs.UpdateElevInside <- msg
+		            fmt.Println("			order.orderHandler: found inside order, sending msg: ",msg)
 		        }
 		    } 
 		    
