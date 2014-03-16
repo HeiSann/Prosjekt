@@ -77,7 +77,7 @@ func (toManager *InternalChan_s)listenTcpCon(){
 			return
 		}else{
 			toManager.new_conn<-con
-			fmt.Println("recieved connection, sending to handle")   			
+			fmt.Println("listenTcpCon: recieved connection, sending to handle")   			
    		}
 	time.Sleep(time.Millisecond*SLEEPTIME)
    	}
@@ -93,10 +93,10 @@ func (self *ElevNet_s)SendTcpMsg(msg elevTypes.Message, tcpConnections map[strin
 		for try < SEND_ATMPTS{
 			_, err := con.Write(bstream)
 			if err!=nil{
-				fmt.Println("failed to send msg")
+				fmt.Println("SendTcpMsg:failed to send msg")
 				try=try+1		
 			}else{
-				fmt.Println("msg ok")
+				fmt.Println("SendTcpMsg: msg ok")
 			break
 			}
 		}
@@ -110,7 +110,7 @@ func (self *ElevNet_s)SendTcpMsg(msg elevTypes.Message, tcpConnections map[strin
 func (self *ElevNet_s)SendTcpToAll(msg elevTypes.Message, tcpConnections map[string]net.Conn){
 	for ip, _ := range tcpConnections{
 		msg.To=ip
-		fmt.Println("SendTcpToAll:",ip)
+		fmt.Println("SendTcpToAll:SendTcpToAll:",ip)
 		self.SendTcpMsg(msg,tcpConnections)
 	}
 }
@@ -121,17 +121,17 @@ func (toManager *InternalChan_s)ConnectElev(ipAdr string){
 	for atmpts < CON_ATMPTS{
 		serverAddr, err := net.ResolveTCPAddr("tcp",ipAdr+":"+TCP_PORT)
 		if err != nil {
-			fmt.Println("Error Resolving Address")
+			fmt.Println("ConnectElev:Error Resolving Address")
 			atmpts++
 		}else{
 			con, err := net.DialTCP("tcp", nil,serverAddr);
 			if err != nil {
-				fmt.Println("Error DialingTCP")
+				fmt.Println("ConnectElev:Error DialingTCP")
 				atmpts++
 			}else{
-				fmt.Println("connection ok")
+				fmt.Println("ConnectElev:connection ok")
 				toManager.new_conn<-con
-				fmt.Println("sendt con on chan")
+				fmt.Println("ConnectElev:sendt con on chan")
 				break
 			}
 		}//end BIG if/else	
@@ -140,28 +140,28 @@ func (toManager *InternalChan_s)ConnectElev(ipAdr string){
 }
 
 func (elevnet *ElevNet_s) registerNewCon (con net.Conn, tcpConnections map[string]net.Conn){ //ta inn conn
-	fmt.Println("handle new Con")
+	fmt.Println("registerNewCon: handle new Con")
 	ip:= getConIp(con)
 
 	_, ok := tcpConnections[ip]
 	
 	if !ok{	
 		fmt.Println(ok)
-		fmt.Println("connection not in map, adding connection")
+		fmt.Println("registerNewCon:connection not in map, adding connection")
 		tcpConnections[ip]=con
 		go elevnet.listenForTcpMsg(con)
-		fmt.Println("started to listen")
+		fmt.Println("registerNewCon:started to listen")
 		//elevnet.intComs.newPinger<-ip
-		fmt.Println("send new pinger")
+		//fmt.Println("registerNewCon:send new pinger")
 	}else{
-		fmt.Println("connection already excist")
+		fmt.Println("registerNewCon:connection already excist")
 	}
 }
 
 func deleteCon(ip string, tcpConnections map[string]net.Conn){
     _, ok :=tcpConnections[ip]
     if !ok{
-        fmt.Println("connection already lost")
+        fmt.Println("deleteCon:connection already lost")
     }else{
         tcpConnections[ip].Close()
         delete(tcpConnections,ip)  
@@ -170,7 +170,7 @@ func deleteCon(ip string, tcpConnections map[string]net.Conn){
 
 
 func getConIp(con net.Conn)(ip string){
-	split:=strings.Split(con.RemoteAddr().String(),":") //splits ip from port
+	split:=strings.Split(con.RemoteAddr().String(),":") //splits ip-part from port
 	conIp :=split[0]
 	return conIp
 	
@@ -187,14 +187,16 @@ func (elevNet *ElevNet_s)reConnectAndSend(msg elevTypes.Message, tcpMap map[stri
 		for try < SEND_ATMPTS{
 			_, err := con.Write(bstream)
 			if err!=nil{
-				fmt.Println("failed to send msg")
+				fmt.Println("reConnectAndSend:failed to send msg")
 				try=try+1		
 			}else{
-				fmt.Println("msg ok")
+				fmt.Println("reConnectAndSend: msg ok")
 			break
 			}
 		}
 	case false:
-		fmt.Println("\t ReConnectAndSend:error, reConnectFailed")
+		//elevNet<-
+		fmt.Println("reConnectAndSend:error, reConnectFailed")
+		//send addOrder msg back to elevator !!!
 	}
 }

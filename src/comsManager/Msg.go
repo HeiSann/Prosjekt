@@ -22,20 +22,20 @@ func (comsMan *ComsManager_s)RecieveMessageFromNet(){
 		  case "COST":
 		  		comsMan.intComs.costMsg<-msg
 				fmt.Println("\t RecieveMessegeFromNet: COST;", msg.Payload)
+				
 		  case "NEED_COST":
 		  		cost :=comsMan.getMyCost(msg.Order) //remember if only cost<cost
 		  		costMsg:=constructCostMsg(comsMan.Ip, msg.From, msg.Order, cost)
 		  		comsMan.ExtComs.SendMsg<-costMsg
-		  		fmt.Println("\t sendt my cost to the elevator requiring it", costMsg.Payload)
-		  		
+		  		fmt.Println("\t sendt my cost to the elevator requiring it, COST=", costMsg.Payload)		  		
 
 		  case "ADD_ORDER":
 		  		comsMan.ExtComs.AddOrder<-msg.Order
-		  		fmt.Println("\t RecieveMessegeFromNet: ADD_ORDER;", msg.Order)
+		  		fmt.Println("\t RecieveMessegeFromNet: ADD_ORDER:", msg.Order)
 
 		  case "UPDATE_BACKUP":
 				comsMan.ExtComs.RecvOrderUpdate<-msg
-				fmt.Println("\t RecieveMessegeFromNet: UPDATE_BACKUP;", msg.Order)
+				fmt.Println("\t RecieveMessegeFromNet: UPDATE_BACKUP with order;", msg.Order)
 
 		  case "DEAD ELEVATOR":
 		  //broadcast the ip. Start auctioning the dead elevators external orders
@@ -79,7 +79,7 @@ func (self *ComsManager_s)InternalCommunication(){ //change name
     	
     	case deadIp:=<-self.ExtComs.DeadElev:
     		fmt.Println("\t ForwardMsg: dead ip:", deadIp)
-			self.ExtComs.AuctionDeadElev<-deadIp		
+			//self.ExtComs.AuctionDeadElev<-deadIp		
 		default:
 			time.Sleep(time.Millisecond*SELECT_SLEEP_TIME)
 		}

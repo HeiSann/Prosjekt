@@ -90,6 +90,7 @@ func (toNet *ElevNet_s) BroadCastPing(){
 		//fmt.Println("bcast sendt")
 		time.Sleep(time.Millisecond*SLEEP_TIME)
 	}
+	
 		//construct Ping msg and broadcast denne må gjennom coms manager
 	//Bcast<-pingmsg
 }
