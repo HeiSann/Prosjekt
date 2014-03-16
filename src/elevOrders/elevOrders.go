@@ -179,6 +179,8 @@ func (self *Orders_s)handle_dead_elev(deadElev string){
 		                self.ExtComs.AuctionOrder <- elevTypes.Order_t{floor,elevTypes.DOWN,true}
 		            case 2:
 		                self.ExtComs.AuctionOrder <- elevTypes.Order_t{floor,elevTypes.NONE,true}
+		            default:
+		                fmt.Println("			orders.handle_dead_elev: unknown dir!")
 		        }
 		    }
 		}
