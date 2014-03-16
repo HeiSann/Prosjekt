@@ -18,7 +18,8 @@ type Orders_s struct{
 
 func Init(ip string,driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManager_ExtComs_s) Orders_s{
 	fmt.Println("			elevOrders.init()...")
-   
+
+    orders := Orders_s{}
 	tableMap := make(map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool)
 	var extcoms = elevTypes.Orders_ExtComs_s{}
 
@@ -37,8 +38,13 @@ func Init(ip string,driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManag
 	extcoms.SendOrderUpdate 	= coms.SendOrderUpdate
 	extcoms.RecvOrderUpdate 	= coms.RecvOrderUpdate
 	extcoms.AuctionDeadElev     = coms.AuctionDeadElev
+	extcoms.CheckNewElev        = coms.CheckNewElev
+	extcoms.UpdateElevInside    = coms.UpdateElevInside
 
-	orders := Orders_s{ip, tableMap, false, extcoms}
+	orders.MY_IP = ip
+	orders.queues = tableMap
+	orders.ExtComs = extcoms
+	
 	go orders.orderHandler()
  	fmt.Println("			orders.init: OK!")
    return orders
@@ -66,8 +72,18 @@ func (self *Orders_s)orderHandler(){
 		    if self.isQueueEmpty(self.MY_IP){
 		        self.ExtComs.NewOrdersChan <- order
 		    }
+		    
 		case deadElev:= <-self.ExtComs.AuctionDeadElev:
 		    self.handle_dead_elev(deadElev)
+		
+		case msg:= <-self.ExtComs.CheckNewElev:
+		    queue := self.queues[msg.To]
+		    for floor:=0 ; floor < elevTypes.N_FLOORS-1 ; floor++{
+		        if queue[floor][elevTypes.NONE]{
+		            msg.Order = elevTypes.Order_t{floor, elevTypes.NONE, true}
+		            self.ExtComs.UpdateElevInside <- msg
+		        }
+		    } 
 		    
 		/* from FSM */
 		case elevPos:= <-self.ExtComs.ExecdOrderChan:
@@ -181,7 +197,7 @@ func (self *Orders_s)handle_dead_elev(deadElev string){
 		                self.ExtComs.AuctionOrder <- elevTypes.Order_t{floor,elevTypes.DOWN,true}
 		            default:
 		                fmt.Println("			orders.handle_dead_elev: unknown dir!")
-		            queue[floor][dir] == false
+		            queue[floor][dir] = false
 		        }
 		    }
 		}
