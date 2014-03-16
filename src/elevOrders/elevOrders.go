@@ -156,7 +156,7 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 		    queue := self.queues[IP]
 			queue[order.Floor][order.Direction] = true
 			self.queues[IP] = queue
-			if order.Direction != elevTypes.NONE{
+			if IP == self.MY_IP || order.Direction != elevTypes.NONE{
 			    self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, true}
 			    fmt.Println("			orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
 			}
