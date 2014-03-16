@@ -87,6 +87,7 @@ func (self *ElevNet_s)SendTcpMsg(msg elevTypes.Message, tcpConnections map[strin
 	ipAddr := msg.To
 	bstream, _ := json.Marshal(msg)
 	con, ok :=tcpConnections[ipAddr]
+trySend:
 	switch ok{
 	case true:
 		try:=0
@@ -97,10 +98,10 @@ func (self *ElevNet_s)SendTcpMsg(msg elevTypes.Message, tcpConnections map[strin
 				try=try+1		
 			}else{
 				fmt.Println("SendTcpMsg: msg ok")
-				break
+				break trySend
 			}
 		}//id addOrderMsg, send back to self to take it
-		
+		go self.reConnectAndSend(msg, tcpConnections)
 	case false:
 		fmt.Println("error, not a connection, trying to connect")
 		go self.reConnectAndSend(msg, tcpConnections)		
