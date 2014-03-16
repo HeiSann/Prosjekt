@@ -21,19 +21,20 @@ func Init(ip string,driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManag
 	var extcoms = elevTypes.Orders_ExtComs_s{}
 
 	extcoms.ButtonChan			= driver.ButtonChan
-	extcoms.SetLightChan 		= driver.SetLightChan
-    extcoms.ElevPosRequest      = make(chan elevTypes.ElevPos_t)
+	extcoms.SetLightChan    	= driver.SetLightChan
+    extcoms.ElevPosRequest		= make(chan elevTypes.ElevPos_t)
 	extcoms.NewOrdersChan		= make(chan elevTypes.Order_t)
 	extcoms.ExecdOrderChan  	= make(chan elevTypes.ElevPos_t)
-	extcoms.ExecRequestChan  	= make(chan elevTypes.ElevPos_t)		
+	extcoms.ExecRequestChan 	= make(chan elevTypes.ElevPos_t)		
 	extcoms.ExecResponseChan	= make(chan bool)
-	extcoms.EmgTriggerdChan  	= make(chan bool)
+	extcoms.EmgTriggerdChan 	= make(chan bool)
 	extcoms.AuctionOrder		= coms.AuctionOrder
 	extcoms.RequestScoreChan	= coms.RequestCost
 	extcoms.RespondScoreChan	= coms.RecvCost
-	extcoms.AddOrder 			= coms.AddOrder
+	extcoms.AddOrder			= coms.AddOrder
 	extcoms.SendOrderUpdate 	= coms.SendOrderUpdate
 	extcoms.RecvOrderUpdate 	= coms.RecvOrderUpdate
+	extcoms.AuctionDeadElev     = coms.AuctionDeadElev
 
 	orders := Orders_s{ip, tableMap, false, extcoms}
 	go orders.orderHandler()
@@ -63,6 +64,8 @@ func (self *Orders_s)orderHandler(){
 		    if self.isQueueEmpty(self.MY_IP){
 		        self.ExtComs.NewOrdersChan <- order
 		    }
+		case deadElev:= <-self.ExtComs.AuctionDeadElev:
+		    self.handle_dead_elev(deadElev)
 		    
 		/* from FSM */
 		case elevPos:= <-self.ExtComs.ExecdOrderChan:
@@ -162,6 +165,25 @@ func (self *Orders_s)get_elev_pos() elevTypes.ElevPos_t{
     self.ExtComs.ElevPosRequest <- pos
     pos =<-self.ExtComs.ElevPosRequest
     return pos
+}
+
+func (self *Orders_s)handle_dead_elev(deadElev string){
+    queue := self.queues[deadElev]
+    for floor:=0; floor< elevTypes.N_FLOORS; floor++{
+	    for dir:=0; dir< elevTypes.N_DIR; dir++{
+		    if	queue[floor][dir] == true{
+		        switch dir{
+		            case 0: 
+		                self.ExtComs.AuctionOrder <- elevTypes.Order_t{floor,elevTypes.UP,true}
+		            case 1:
+		                self.ExtComs.AuctionOrder <- elevTypes.Order_t{floor,elevTypes.DOWN,true}
+		            case 2:
+		                self.ExtComs.AuctionOrder <- elevTypes.Order_t{floor,elevTypes.NONE,true}
+		        }
+		    }
+		}
+	}
+    delete(self.queues, deadElev)
 }
 
 func getOrderAtPos(elevPos elevTypes.ElevPos_t, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]bool) elevTypes.Order_t{
