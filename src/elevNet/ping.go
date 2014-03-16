@@ -57,7 +57,7 @@ func (self *ElevNet_s) updatePingTime(pingMap map[string]time.Time, msg elevType
 	if !inMap{
 		self.intComs.connectToElev<-pingIP
 		self.ExtComs.NewElev<-pingIP
-		fmt.Println("newElevator send to comsManager")
+		fmt.Println("upDatePingTime:newElevator send to comsManager ")
 	}
 	limitStamp:=time.Now().Add(time.Millisecond*PING_TIMEOUT_MILLI)
 	pingMap[msg.From]=limitStamp
@@ -68,9 +68,9 @@ func (toRefresh *InternalChan_s)performTimeControl(pingMap map[string]time.Time)
 	currentTime :=time.Now()
 	for ip,pingtime := range pingMap{
 		if currentTime.After(pingtime){
-			fmt.Println("oh no, my friend died")
+			fmt.Println("performTimeControl :oh no, my friend died")
 			toRefresh.deadPinger<-ip	
-			fmt.Println("deadip sendt")    	
+			fmt.Println("performTimeControl: deadip sendt")    	
 	    }
     }
 }
@@ -79,7 +79,7 @@ func (self *ElevNet_s)deletePinger(pingMap map[string]time.Time, ip string){
 	delete(pingMap,ip)
 	self.intComs.deadElev<-ip
 	self.ExtComs.DeadElev<-ip	
-	fmt.Println("deletePinger: notified other modules about dead elevator", self.ExtComs.DeadElev)
+	fmt.Println("deletePinger: deleted dead pinger from map. notified other modules about dead elevator", self.ExtComs.DeadElev)
 }
 
 func (toNet *ElevNet_s) BroadCastPing(){

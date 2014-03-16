@@ -62,7 +62,7 @@ func (self *ComsManager_s)TcpSenderTest(to string){
 
 
 func (self *ComsManager_s)InternalCommunication(){ //change name
-	fmt.Println("\tCOMSMANAGER: DEAD ELEV CHANNEL", self.ExtComs.DeadElev)
+	fmt.Println("\tCOMSMANAGER: New elevChannel", self.ExtComs.UpdateElevInside)
 	for{
 		select{
 		case order:=<- self.ExtComs.SendOrderUpdate:
@@ -84,10 +84,11 @@ func (self *ComsManager_s)InternalCommunication(){ //change name
 		case newIp :=<-self.ExtComs.NewElev:
 			newElevUpdate:=constructNewOrderMsg(newIp, self.Ip, elevTypes.Order_t{})
 			self.ExtComs.CheckNewElev<-newElevUpdate
-			fmt.Println("InternalCommunication: commanded order to check if new elevator has any inside orders:", newIp)
+			fmt.Println("\t InternalCommunication: commanded order to check if new elevator has any inside orders:", newIp)
 			
 		case msg:=<-self.ExtComs.UpdateElevInside:
 			self.ExtComs.SendMsg<-msg
+			fmt.Println("\t InternalCommunication:recieved inside order update. sending to IP:", msg.To)
 
 		default:
 			time.Sleep(time.Millisecond*SELECT_SLEEP_TIME)
