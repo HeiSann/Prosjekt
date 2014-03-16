@@ -97,13 +97,12 @@ func (self *ElevNet_s)SendTcpMsg(msg elevTypes.Message, tcpConnections map[strin
 				try=try+1		
 			}else{
 				fmt.Println("SendTcpMsg: msg ok")
-			break
+				break
 			}
-		go self.reConnectAndSend(msg, tcpConnections)
-		}
+		}//id addOrderMsg, send back to self to take it
+		
 	case false:
 		fmt.Println("error, not a connection, trying to connect")
-		//toManager.connectToElev<-msg.To
 		go self.reConnectAndSend(msg, tcpConnections)		
 	}
 }	
