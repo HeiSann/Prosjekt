@@ -63,7 +63,7 @@ func Init(ip string, net elevTypes.Net_ExtComs_s)ComsManager_s{
 	comsMan.intComs=InternalChannelsInit()
 	
 	go comsMan.RecieveMessageFromNet()
-	go comsMan.ForwardMessageFromOrder()
+	go comsMan.InternalCommunication()
 	go comsMan.manageAuction()
 	
 	return comsMan

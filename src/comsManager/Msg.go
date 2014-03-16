@@ -61,7 +61,7 @@ func (self *ComsManager_s)TcpSenderTest(to string){
 }
 
 
-func (self *ComsManager_s)ForwardMessageFromOrder(){ //change name
+func (self *ComsManager_s)InternalCommunication(){ //change name
 	fmt.Println("\tCOMSMANAGER: DEAD ELEV CHANNEL", self.ExtComs.DeadElev)
 	for{
 		select{
@@ -70,13 +70,16 @@ func (self *ComsManager_s)ForwardMessageFromOrder(){ //change name
 			msg:=constructUpdateMsg(self.Ip, order, self.Ip)
 			self.ExtComs.SendMsgToAll<-msg
 			fmt.Println("\t comsManager.ForwardMessageFromOrder: sendt msg self.ExtComs.SendMsgToAll<-msg, msg=", msg)
+			
 		case order:=<-self.intComs.needCost:
 			needCostMsg:=constructNeedCostMsg(self.Ip, order)
     		fmt.Println("\t comsManager: needcostMsg created. Trying to send")
     		self.ExtComs.SendMsgToAll<-needCostMsg
     		fmt.Println("\t comsManager: send need cost Msg to all tcp elevators")		
+    	
     	case deadIp:=<-self.ExtComs.DeadElev:
     		fmt.Println("\t ForwardMsg: dead ip:", deadIp)
+			//self.ExtComs.deadElevAuction<-deadIp		
 		default:
 			time.Sleep(time.Millisecond*SELECT_SLEEP_TIME)
 		}
