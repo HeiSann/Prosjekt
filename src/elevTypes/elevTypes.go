@@ -57,7 +57,8 @@ type ComsManager_ExtComs_s struct{
 	SendOrderUpdate chan Order_t
 	RecvOrderUpdate chan Message
 	AuctionDeadElev chan string
-	CheckNewElev chan string
+	CheckNewElev chan Message
+	UpdateElevInside chan Message
       
 	/*inited in net*/
 	RecvMsg chan Message
@@ -84,8 +85,9 @@ type Orders_ExtComs_s struct{
 	AddOrder 			chan Order_t	
 	SendOrderUpdate 	chan Order_t
 	RecvOrderUpdate 	chan Message
-	AuctionDeadElev   chan string
-	CheckNewElev		chan string
+	AuctionDeadElev   	chan string
+	CheckNewElev		chan Message
+	UpdateElevInside 	chan Message
 	/* Channels from driver */
 	ButtonChan        <-chan Button
 	SetLightChan      chan<- Light_t
