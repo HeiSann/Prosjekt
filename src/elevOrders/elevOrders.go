@@ -194,18 +194,13 @@ func (self *Orders_s)get_elev_pos() elevTypes.ElevPos_t{
 func (self *Orders_s)handle_dead_elev(deadElev string){
     queue := self.queues[deadElev]
     for floor:=0; floor< elevTypes.N_FLOORS; floor++{
-	    for dir:=0; dir< elevTypes.N_DIR; dir++{
-		    if	queue[floor][dir] == true{
-		        switch dir{
-		            case 0: 
-		                self.ExtComs.AuctionOrder <- elevTypes.Order_t{floor,elevTypes.UP,true}
-		            case 1:
-		                self.ExtComs.AuctionOrder <- elevTypes.Order_t{floor,elevTypes.DOWN,true}
-		            default:
-		                fmt.Println("			orders.handle_dead_elev: unknown dir!")
-		        }
-		        queue[floor][dir] = false
-		    }
+		if	queue[floor][elevTypes.UP] == true{
+		    self.ExtComs.AuctionOrder <- elevTypes.Order_t{floor,elevTypes.UP,true}
+		    queue[floor][elevTypes.UP] = false
+		    
+		}else if queue[floor][elevTypes.DOWN] == true{
+		    self.ExtComs.AuctionOrder <- elevTypes.Order_t{floor,elevTypes.DOWN,true}
+		    queue[floor][elevTypes.DOWN] = false
 		}
 	}
 	self.queues[deadElev] = queue
