@@ -180,7 +180,8 @@ func getConIp(con net.Conn)(ip string){
 func (elevNet *ElevNet_s)reConnectAndSend(msg elevTypes.Message, tcpMap map[string]net.Conn){
 	elevNet.intComs.ConnectElev(msg.To)
 	ipAddr := msg.To
-	bstream, _ := json.Marshal(msg)
+	bstream, err0 := json.Marshal(msg)
+	fmt.Println(err0)
 	con, ok :=tcpMap[ipAddr]
 	switch ok{
 	case true:
