@@ -57,6 +57,7 @@ func (self *ElevNet_s) updatePingTime(pingMap map[string]time.Time, msg elevType
 	if !inMap{
 		self.intComs.connectToElev<-pingIP
 		self.ExtComs.NewElev<-pingIP
+		fmt.Println("newElevator send to comsManager")
 	}
 	limitStamp:=time.Now().Add(time.Millisecond*PING_TIMEOUT_MILLI)
 	pingMap[msg.From]=limitStamp

@@ -99,6 +99,7 @@ func (self *ElevNet_s)SendTcpMsg(msg elevTypes.Message, tcpConnections map[strin
 				fmt.Println("SendTcpMsg: msg ok")
 			break
 			}
+		go self.reConnectAndSend(msg, tcpConnections)
 		}
 	case false:
 		fmt.Println("error, not a connection, trying to connect")

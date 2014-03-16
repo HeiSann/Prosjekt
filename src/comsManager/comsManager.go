@@ -44,6 +44,7 @@ func ExternalChannelsInit(net elevTypes.Net_ExtComs_s)elevTypes.ComsManager_ExtC
 	extChans.SendMsg=net.SendMsg
 	extChans.SendMsgToAll=net.SendMsgToAll
 	extChans.DeadElev = net.DeadElev
+	extChans.NewElev = net.NewElev
 	//communication to order
 	extChans.RequestCost = make(chan elevTypes.Order_t)
 	extChans.RecvCost = make(chan int)
