@@ -170,6 +170,7 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 			    if (next_order.Floor == order.Floor ){
 					fmt.Println("			orders.updating_queue: Double exec!")
 			        also_execd := next_order
+			        also_execd.Active = false
 			        self.ExtComs.SendOrderUpdate <- also_execd
 			        self.delete_order(also_execd, IP)
 			    }
