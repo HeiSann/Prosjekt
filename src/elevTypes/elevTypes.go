@@ -69,8 +69,8 @@ type Orders_ExtComs_s struct{
 	/* Channels initialized in orders */
 	ElevPosRequest      chan ElevPos_t
 	NewOrdersChan    	chan Order_t 
-	ExecdOrderChan  	chan Order_t	
-	ExecRequestChan  	chan Order_t	
+	ExecdOrderChan  	chan ElevPos_t	
+	ExecRequestChan  	chan ElevPos_t	
 	ExecResponseChan	chan bool	
 	EmgTriggerdChan  	chan bool
 	/* Channels from comsManager */
@@ -110,8 +110,8 @@ type Fsm_ExtComs_s struct{
 	/* Channels from orders*/
 	ElevPosRequest      chan ElevPos_t
 	NewOrdersChan		chan Order_t 
-	ExecdOrderChan		chan Order_t	
-	ExecRequestChan		chan Order_t	
+	ExecdOrderChan		chan ElevPos_t	
+	ExecRequestChan		chan ElevPos_t	
 	ExecResponseChan	chan bool	
 	EmgTriggerdChan		chan bool   	
 }

@@ -69,7 +69,7 @@ func (self *Fsm_s)action_check_order(){
 	self.ExtComs.SetFloorIndChan <- self.lastFloor
 	fmt.Println("				fsm.action_check_order: floorIndSignal sendt")
 	
-	current := elevTypes.Order_t{self.lastFloor, self.lastDir, true}
+	current := elevTypes.ElevPos_t{self.lastFloor, self.lastDir, true}
 	self.ExtComs.ExecRequestChan <- current
 	fmt.Println("				fsm.action_check_order: sendt to orders on Ext.Coms.ExecRecuest: ", current)
 }
@@ -97,8 +97,8 @@ func (self *Fsm_s)action_done(){
 	self.ExtComs.DoorOpenChan <- false
 	self.state = IDLE
 	fmt.Println("				fsm: IDLE")
-	self.ExtComs.ExecdOrderChan <- elevTypes.Order_t{self.lastFloor, self.lastDir, false}
-	fmt.Println("				fsm.action_done: sendt on ExComs.ExecdOrderChan: ", elevTypes.Order_t{self.lastFloor, self.lastDir, false})
+	self.ExtComs.ExecdOrderChan <- elevTypes.ElevPos_t{self.lastFloor, self.lastDir, false}
+	fmt.Println("				fsm.action_done: sendt on ExComs.ExecdOrderChan: ", elevTypes.ElevPos_t{self.lastFloor, self.lastDir, false})
 }   
 
 func (self *Fsm_s)action_stop(){
@@ -122,8 +122,8 @@ func (fsm *Fsm_s)init_fsm_table(){
 /*DOORS_OPEN */  []func(){action_dummy,		action_dummy,			action_dummy,			fsm.action_done,fsm.action_pause,	fsm.action_stop},  
 /*MOVING_UP  */  []func(){action_dummy,		fsm.action_check_order,	fsm.action_exec,		action_dummy,	fsm.action_pause,	fsm.action_stop},
 /*MOVING_DOWN*/  []func(){action_dummy,		fsm.action_check_order,	fsm.action_exec,		action_dummy,	fsm.action_pause,	fsm.action_stop},
-/*EMG_STOP   */  []func(){action_dummy,		action_dummy,			action_dummy,			action_dummy,	fsm.action_pause,	fsm.action_stop},  
-/*OBST       */  []func(){action_dummy,		action_dummy,			action_dummy,			action_dummy,	action_dummy,		fsm.action_stop}, 
+/*EMG_STOP	 */  []func(){action_dummy,		action_dummy,			action_dummy,			action_dummy,	fsm.action_pause,	fsm.action_stop},  
+/*OBST		 */  []func(){action_dummy,		action_dummy,			action_dummy,			action_dummy,	action_dummy,		fsm.action_stop}, 
 /*OBST+EMG	 */	 []func(){action_dummy,		action_dummy,			action_dummy,			action_dummy,	action_dummy,		fsm.action_stop}, 
 	}
 }
@@ -241,8 +241,7 @@ func (fsm *Fsm_s)generate_events(){
             case <-fsm.ExtComs.ObsChan:
 			    fsm.intComs.eventChan <- OBSTRUCTION
 			    
-            case floor := <-fsm.ExtComs.FloorChan:
-                //fmt.Println("				fsm.generate_events: got a floor reading: ", floor) 
+            case floor := <-fsm.ExtComs.FloorChan: 
                 if floor != -1 && floor != fsm.lastFloor{
                     fsm.lastFloor = floor  //TODO: FIX!
 				    fmt.Println("				fsm.generate_events: reached new floor! lastFloor is now: ", floor) 
