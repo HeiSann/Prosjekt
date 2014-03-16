@@ -80,11 +80,10 @@ func (self *ComsManager_s)InternalCommunication(){ //change name
     	case deadIp:=<-self.ExtComs.DeadElev:
     		fmt.Println("\t ForwardMsg: dead ip:", deadIp)
 			self.ExtComs.AuctionDeadElev<-deadIp		
-<<<<<<< HEAD
+
 		case newIp :=<-self.ExtComs.NewElev:
 			self.ExtComs.CheckNewElev<-newIp
-=======
->>>>>>> ae53fbfb0a279b45cf5c0b1268d0da28a0d6c2ee
+
 		default:
 			time.Sleep(time.Millisecond*SELECT_SLEEP_TIME)
 		}
