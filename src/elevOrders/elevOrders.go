@@ -137,6 +137,7 @@ func (self *Orders_s)orderHandler(){
 			}
 			if order.Direction == elevTypes.NONE{
 				self.update_queue(order, self.MY_IP)
+				self.ExtComs.SendOrderUpdate <- order
 			} else{
 			self.ExtComs.AuctionOrder <- order
 			}
@@ -153,8 +154,10 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 		    queue := self.queues[IP]
 			queue[order.Floor][order.Direction] = true
 			self.queues[IP] = queue
-			self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, true}
-			fmt.Println("			orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
+			if order.Direction != elevTypes.NONE{
+			    self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, true}
+			    fmt.Println("			orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
+			}
 		case false:
 		    if IP == self.MY_IP{ 
 				self.delete_order(order, IP)
