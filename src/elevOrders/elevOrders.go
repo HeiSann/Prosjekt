@@ -1,9 +1,10 @@
 package elevOrders
 
 import(
-   "fmt"
+    "fmt"
 	"time"
 	"math"
+	"sync"
 	"elevTypes"
 )
 
@@ -12,6 +13,7 @@ type Orders_s struct{
 	queues			map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool
 	emg				bool
 	ExtComs			elevTypes.Orders_ExtComs_s
+	mutex           sync.Mutex
 }
 
 func Init(ip string,driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManager_ExtComs_s) Orders_s{
@@ -177,15 +179,14 @@ func (self *Orders_s)handle_dead_elev(deadElev string){
 		                self.ExtComs.AuctionOrder <- elevTypes.Order_t{floor,elevTypes.UP,true}
 		            case 1:
 		                self.ExtComs.AuctionOrder <- elevTypes.Order_t{floor,elevTypes.DOWN,true}
-		            case 2:
-		                self.ExtComs.AuctionOrder <- elevTypes.Order_t{floor,elevTypes.NONE,true}
 		            default:
 		                fmt.Println("			orders.handle_dead_elev: unknown dir!")
+		            queue[floor][dir] == false
 		        }
 		    }
 		}
 	}
-    delete(self.queues, deadElev)
+	self.queues[deadElev] = queue
 }
 
 func getOrderAtPos(elevPos elevTypes.ElevPos_t, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]bool) elevTypes.Order_t{
