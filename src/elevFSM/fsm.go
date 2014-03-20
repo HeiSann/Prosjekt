@@ -63,19 +63,19 @@ func (self *Fsm_s)action_start(){
 	}
 }
 
-func (self *Fsm_s)action_check_order(){
-    //fmt.Println("				fsm.action_check_order")
+func (self *Fsm_s)action_checkOrder(){
+    //fmt.Println("				fsm.action_checkOrder")
 	
 	self.ExtComs.SetFloorIndChan <- self.lastFloor
-	fmt.Println("				fsm.action_check_order: floorIndSignal sendt")
+	fmt.Println("				fsm.action_checkOrder: floorIndSignal sendt")
 	
 	current := elevTypes.ElevPos_t{self.lastFloor, self.lastDir, true}
 	self.ExtComs.ExecRequestChan <- current
-	fmt.Println("				fsm.action_check_order: sendt to orders on Ext.Coms.ExecRecuest: ", current)
+	fmt.Println("				fsm.action_checkOrder: sendt to orders on Ext.Coms.ExecRecuest: ", current)
 }
 
-func (self *Fsm_s)action_exec_same(){
-    //fmt.Println("				fsm.action_exec_same")
+func (self *Fsm_s)action_execSame(){
+    //fmt.Println("				fsm.action_execSame")
 	self.ExtComs.DoorOpenChan <- true
 	go startTimer(self.intComs.timeoutChan, elevTypes.DOOR_OPEN_TIME)
 	self.lastDir = elevTypes.NONE
@@ -118,10 +118,10 @@ func action_dummy(){
 func (fsm *Fsm_s)initFsmTable(){
 	fsm.table = [][]func(){
 /*STATES:	  \	EVENTS:	//NewOrder			//FloorReached        	//Exec  				//TimerOut		//Obst				//EmgPressed
-/*IDLE       */  []func(){fsm.action_start,	action_dummy,			fsm.action_exec_same,	action_dummy,	fsm.action_pause,	fsm.action_stop},
+/*IDLE       */  []func(){fsm.action_start,	action_dummy,			fsm.action_execSame,	action_dummy,	fsm.action_pause,	fsm.action_stop},
 /*DOORS_OPEN */  []func(){action_dummy,		action_dummy,			action_dummy,			fsm.action_done,fsm.action_pause,	fsm.action_stop},  
-/*MOVING_UP  */  []func(){action_dummy,		fsm.action_check_order,	fsm.action_exec,		action_dummy,	fsm.action_pause,	fsm.action_stop},
-/*MOVING_DOWN*/  []func(){action_dummy,		fsm.action_check_order,	fsm.action_exec,		action_dummy,	fsm.action_pause,	fsm.action_stop},
+/*MOVING_UP  */  []func(){action_dummy,		fsm.action_checkOrder,	fsm.action_exec,		action_dummy,	fsm.action_pause,	fsm.action_stop},
+/*MOVING_DOWN*/  []func(){action_dummy,		fsm.action_checkOrder,	fsm.action_exec,		action_dummy,	fsm.action_pause,	fsm.action_stop},
 /*EMG_STOP	 */  []func(){action_dummy,		action_dummy,			action_dummy,			action_dummy,	fsm.action_pause,	fsm.action_stop},  
 /*OBST		 */  []func(){action_dummy,		action_dummy,			action_dummy,			action_dummy,	action_dummy,		fsm.action_stop}, 
 /*OBST+EMG	 */	 []func(){action_dummy,		action_dummy,			action_dummy,			action_dummy,	action_dummy,		fsm.action_stop}, 
