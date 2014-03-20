@@ -7,4 +7,4 @@ go install comsManager
 go install elevDrivers
 go install elevOrders
 go install elevFSM
-go run src/main2.go
+go run src/main.go

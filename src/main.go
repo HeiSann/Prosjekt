@@ -1,57 +1,35 @@
 package main
 
-import "runtime"
-import "fmt"
-import "elevNet"
-import "comsManager"
-import "elevdriver"
-import "elevCtrl"
-import "os/exec"
+import(
+   "fmt"
+   "elevNet"
+   "comsManager"
+   "elevDrivers"
+   "elevOrders"
+   "elevFSM"
+)
 
+type Elevator struct{
+	driver      elevDrivers.Drivers_s
+	net         elevNet.ElevNet_s
+	coms        comsManager.ComsManager_s
+	orders      elevOrders.Orders_s
+	fsm         elevFSM.Fsm_s
+}
 
-const BCAST_IP = "129.241.187.255"
-const LISTEN_PORT = "20022"
-const TARGET_PORT = "20011"
+func main(){
+	end := make(chan bool)
 
-
-func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU()) 
-	//sleepChan :=make(chan int)
-	//test :=coms.ConstructPckg("129.241.187.255","PING", "cake or death?")
-	coms.ComsChanInit()
-
-	//go coms.SendPckgTo(BCAST_IP,TARGET_PORT ,test)
-	
-	go coms.ListenToBroadcast(LISTEN_PORT,coms.ComsChan )
-	go network.DeliverPckg(coms.ComsChan)
-	fmt.Println("Coms OK")
-
-	buttonChan := make(chan elevdriver.Button)
-    floorChan := make(chan int)
-    motorChan := make(chan elevdriver.Direction_t)
-    stopButtonChan := make(chan bool)
-    obsChan := make(chan bool)
-
-	var elev elevCtrl.Elevator
-
-	elev.ElevInit(
-		buttonChan, 
-		floorChan, 
-		motorChan,
-		stopButtonChan, 
-		obsChan)
-
-	elevdriver.MotorDown(motorChan)
-	sensor := -1
-	for{
-		select{
-		case sensor=<-floorChan:
-			if sensor == 1{
-				elevdriver.MotorUp(motorChan)
-			}
-			if sensor == 4{
-				elevdriver.MotorDown(motorChan)
-			}
-		}	
-	}
+	fmt.Println("start of main")
+	var drivers = elevDrivers.Init()
+	var net = elevNet.Init()
+	var coms = comsManager.Init(net.Ip, net.ExtComs)
+	var orders = elevOrders.Init(net.Ip, drivers.ExtComs, coms.ExtComs)
+	var fsm = elevFSM.Init(drivers.ExtComs, orders.ExtComs)
+   
+	var Elev = Elevator{drivers, net, coms, orders, fsm}
+       
+	<-end
+	fmt.Println(Elev)
+    
 }
