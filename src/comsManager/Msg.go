@@ -37,14 +37,6 @@ func (comsMan *ComsManager_s)RecieveMessageFromNet(){
 				comsMan.ExtComs.RecvOrderUpdate<-msg
 				fmt.Println("\t RecieveMessegeFromNet: UPDATE_BACKUP with order;", msg.Order)
 
-		  case "DEAD ELEVATOR":
-		  //broadcast the ip. Start auctioning the dead elevators external orders
-
-		  case "TCP ERROR":
-		  	//go routine
-		  	//try to send msg againg
-		  	//ig msg fails n times. Send msg to the sender that the msg was lost. Take the order if the msg was an order type
-
         default:
             fmt.Println("\t", msg.From)
             fmt.Println("\tnot able to read msg header. Something went terribly wrong, oh god, i have dissapointed the other elevators, they will hate me so much. Pls ctrlC me right now I cant stand this pain any longer")
@@ -52,16 +44,8 @@ func (comsMan *ComsManager_s)RecieveMessageFromNet(){
     }
 }
 
-func (self *ComsManager_s)TcpSenderTest(to string){
-        msg:=elevTypes.Message{}
-        msg.From= "129.241.187.156"
-        msg.To= to
-        msg.Type="test"
-        self.ExtComs.SendMsg<-msg 
-}
 
-
-func (self *ComsManager_s)InternalCommunication(){ //change name
+func (self *ComsManager_s)InternalCommunication(){ 
 	for{
 		select{
 		case order:=<- self.ExtComs.SendOrderUpdate:

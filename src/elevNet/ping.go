@@ -16,7 +16,7 @@ const LIMIT = 50000000
 func (elevNet *ElevNet_s) RefreshNetwork(){
 	elevPingTimes:=make(map[string]time.Time)
 	go elevNet.intComs.pingTimer()
-	go elevNet.BroadCastPing()
+	go elevNet.broadCastPing()
 	
     for{
         select{
@@ -82,7 +82,7 @@ func (self *ElevNet_s)deletePinger(pingMap map[string]time.Time, ip string){
 	fmt.Println("deletePinger: deleted dead pinger from map. notified other modules about dead elevator", self.ExtComs.DeadElev)
 }
 
-func (toNet *ElevNet_s) BroadCastPing(){
+func (toNet *ElevNet_s) broadCastPing(){
 	
 	myIp:=GetMyIP()
 	destIp:=GetBroadcastIP(myIp)
@@ -92,15 +92,8 @@ func (toNet *ElevNet_s) BroadCastPing(){
 		//fmt.Println("bcast sendt")
 		time.Sleep(time.Millisecond*SLEEP_TIME)
 	}
-	
-		//construct Ping msg and broadcast denne må gjennom coms manager
-	//Bcast<-pingmsg
 }
 
-func checkIfAlive(ipadr string){
-    //send new tcp msg to ensure that elevator is lost
-    //send msg to refresh network and updateTcpCon map(on the same channel?) so that the connection is deleted and pingmap removed
-}
 
 func (ToRefresh *InternalChan_s) pingTimer(){
     for{
@@ -116,8 +109,4 @@ func ConstructPing(ipTo string, ipFrom string)elevTypes.Message{
 	msg.Type ="PING"
 	return msg
 }
-
-	
-            
-//hva hvis error når man sender melding over nettverk. Kanskje en kanal som sender den ikke sendte meldingen tilbake til comsManager som sender den dit den kom fra??
 

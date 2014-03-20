@@ -23,17 +23,17 @@ func (elevNet *ElevNet_s)ManageTCPCom(){
 	for {	
 		select{		
 		
-		case newTcpCon := <-elevNet.intComs.new_conn:
+		case newTcpCon := <-elevNet.intComs.newConn:
 			fmt.Println("ManageTCPCom :newconn")
 			elevNet.registerNewCon(newTcpCon, tcpConnections)
 			
 		case ip := <-elevNet.intComs.connectToElev:
 			fmt.Println("ManageTCPCom:case connetct to")
-			go elevNet.intComs.ConnectElev(ip)
+			go elevNet.intComs.connectElev(ip)
 			
 		case msg := <-elevNet.ExtComs.SendMsg:
 			fmt.Println("ManageTcpCom: case send")
-			go elevNet.SendTcpMsg(msg, tcpConnections)
+			go elevNet.sendTcpMsg(msg, tcpConnections)
 			
 		case ip := <-elevNet.intComs.deadElev:
         		fmt.Println("ManageTCPCom:case dead")
@@ -41,7 +41,7 @@ func (elevNet *ElevNet_s)ManageTCPCom(){
             
         case msg:=<-elevNet.ExtComs.SendMsgToAll:
         	fmt.Println("ManageTCPCom:case sendMsgToAll")
-        	elevNet.SendTcpToAll(msg, tcpConnections)
+        	elevNet.sendTcpToAll(msg, tcpConnections)
         
         case msg:= <-elevNet.intComs.tcpFail:
         	elevNet.ExtComs.FailedTcpMsg<-msg
@@ -80,14 +80,14 @@ func (toManager *InternalChan_s) listenForTcpCon(){
 		if err != nil {
 			return
 		}else{
-			toManager.new_conn<-con
+			toManager.newConn<-con
 			fmt.Println("listenTcpCon: recieved connection, sending to handle")   			
    		}
 	time.Sleep(time.Millisecond*SLEEPTIME)
    	}
 }	
 
-func (self *ElevNet_s)SendTcpMsg(msg elevTypes.Message, tcpConnections map[string]net.Conn){
+func (self *ElevNet_s)sendTcpMsg(msg elevTypes.Message, tcpConnections map[string]net.Conn){
 	ipAddr := msg.To
 	bstream, _ := json.Marshal(msg)
 	con, ok :=tcpConnections[ipAddr]
@@ -112,16 +112,16 @@ trySend:
 	}
 }	
 
-func (self *ElevNet_s)SendTcpToAll(msg elevTypes.Message, tcpConnections map[string]net.Conn){
+func (self *ElevNet_s)sendTcpToAll(msg elevTypes.Message, tcpConnections map[string]net.Conn){
 	for ip, _ := range tcpConnections{
 		msg.To=ip
 		fmt.Println("SendTcpToAll:SendTcpToAll:",ip)
-		self.SendTcpMsg(msg,tcpConnections)
+		self.sendTcpMsg(msg,tcpConnections)
 	}
 }
 
 
-func (toManager *InternalChan_s)ConnectElev(ipAdr string){
+func (toManager *InternalChan_s)connectElev(ipAdr string){
 	atmpts:=0
 	for atmpts < CON_ATMPTS{
 		serverAddr, err := net.ResolveTCPAddr("tcp",ipAdr+":"+TCP_PORT)
@@ -135,7 +135,7 @@ func (toManager *InternalChan_s)ConnectElev(ipAdr string){
 				atmpts++
 			}else{
 				fmt.Println("ConnectElev:connection ok")
-				toManager.new_conn<-con
+				toManager.newConn<-con
 				fmt.Println("ConnectElev:sendt con on chan")
 				break
 			}
@@ -182,7 +182,7 @@ func getConIp(con net.Conn)(ip string){
 }
 
 func (elevNet *ElevNet_s)reConnectAndSend(msg elevTypes.Message, tcpMap map[string]net.Conn){
-	elevNet.intComs.ConnectElev(msg.To)
+	elevNet.intComs.connectElev(msg.To)
 	ipAddr := msg.To
 	bstream, err0 := json.Marshal(msg)
 	fmt.Println("reConectAndSend Json:", err0)

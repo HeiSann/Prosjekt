@@ -16,9 +16,9 @@ type ElevNet_s struct{
 }
 
 type InternalChan_s struct{
-	connect_to chan bool
-	new_conn chan net.Conn
-	send_msg chan elevTypes.Message
+	//connectTo chan bool
+	newConn chan net.Conn
+	//sendMsg chan elevTypes.Message
 	timerOut chan bool
 	newPinger chan string	
 	deadElev chan string
@@ -58,9 +58,9 @@ func ExternalChannelsInit() elevTypes.Net_ExtComs_s{
 
 func InternalChannelsInit()InternalChan_s{
 	internalChan:=InternalChan_s{}
-	internalChan.connect_to = make(chan bool)
-	internalChan.new_conn = make(chan net.Conn)
-	internalChan.send_msg = make(chan elevTypes.Message)
+	//internalChan.connect_to = make(chan bool) unneeded?
+	internalChan.newConn = make(chan net.Conn)
+	//internalChan.sendMsg = make(chan elevTypes.Message) unneeded?
 	internalChan.timerOut = make(chan bool)
 	internalChan.newPinger = make(chan string)
 	internalChan.deadElev = make(chan string)
@@ -70,18 +70,4 @@ func InternalChannelsInit()InternalChan_s{
 	return internalChan
 }
 
-/*
-//not generic, could use reflect...
-func message2bytestream (m elevTypes.Message) []byte{
-	msg := m.To +"~"+m.From +"~"+ m.Msg_type +"~"+ m.Payload
-	return []byte(msg+"\x00")
-}
-
-//not generic, could use reflect..
-func bytestream2message(m []byte) elevTypes.Message{
-	msg_string := string(m[:])
-	msg_array := strings.Split(msg_string, "~")
-	msg := elevTypes.Message{msg_array[0], msg_array[1], msg_array[2], msg_array[3]}
-	return msg
-}*/
 
