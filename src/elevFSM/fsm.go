@@ -135,7 +135,6 @@ func(self *Fsm_s)initIntComs(){
 }
 
 func(self *Fsm_s)initExtComs(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s){	
-	self.ExtComs.ButtonChan 		= driver.ButtonChan
 	self.ExtComs.FloorChan 			= driver.SensorChan
 	self.ExtComs.StopButtonChan	    = driver.StopButtonChan
 	self.ExtComs.ObsChan			= driver.ObsChan	

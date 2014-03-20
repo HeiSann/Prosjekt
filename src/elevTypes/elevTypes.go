@@ -109,7 +109,6 @@ type Drivers_ExtComs_s struct{
 
 type Fsm_ExtComs_s struct{
 	/* Channels from driver */
-	ButtonChan        <-chan Button
 	FloorChan         <-chan int
 	StopButtonChan    <-chan bool
 	ObsChan           <-chan bool
