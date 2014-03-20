@@ -4,7 +4,6 @@ import(
     "fmt"
 	"time"
 	"math"
-	"sync"
 	"elevTypes"
 )
 

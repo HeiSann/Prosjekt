@@ -16,7 +16,7 @@ const SEND_ATMPTS = 5
 
 func (elevNet *ElevNet_s)ManageTCPCom(){	
 	fmt.Println("go tcp manager")
-	go elevNet.intComs.listenTcpCon()
+	go elevNet.intComs.listenForTcpCon()
 
 	tcpConnections:= make(map[string]net.Conn)
 	fmt.Println("ManageTCPCom channe: ",elevNet.ExtComs.SendMsgToAll)
@@ -45,6 +45,7 @@ func (elevNet *ElevNet_s)ManageTCPCom(){
         
         case msg:= <-elevNet.intComs.tcpFail:
         	elevNet.ExtComs.FailedTcpMsg<-msg
+        	fmt.Println("ManageTCPCom:case tcpFail")
 		default:
 			time.Sleep(time.Millisecond*SLEEPTIME)
 			
@@ -69,7 +70,7 @@ func (toComsMan *ElevNet_s) listenForTcpMsg (con net.Conn){
 	}
 }
 
-func (toManager *InternalChan_s)listenTcpCon(){
+func (toManager *InternalChan_s) listenForTcpCon(){
 	localAddr, err := net.ResolveTCPAddr("tcp",":"+TCP_PORT)
 	sock, err := net.ListenTCP("tcp", localAddr)
 	if err != nil { return }
