@@ -10,25 +10,21 @@ import(
 type Orders_s struct{
     MY_IP           string
 	queues			map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool
-	emg				bool
+	emg			bool
 	ExtComs			elevTypes.Orders_ExtComs_s
 }
 
-func Init(ip string,driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManager_ExtComs_s) Orders_s{
+func Init(ip string, driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManager_ExtComs_s) Orders_s{
 	fmt.Println("			elevOrders.init()...")
 
     orders := Orders_s{}
 	tableMap := make(map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool)
-	var extcoms = elevTypes.Orders_ExtComs_s{}
-
+	
+	extcoms := elevTypes.Orders_ExtComs_s{}	
+	//Channels from Driver
 	extcoms.ButtonChan			= driver.ButtonChan
-	extcoms.SetLightChan    	= driver.SetLightChan
-    extcoms.ElevPosRequest		= make(chan elevTypes.ElevPos_t)
-	extcoms.NewOrdersChan		= make(chan elevTypes.Order_t)
-	extcoms.ExecdOrderChan  	= make(chan elevTypes.ElevPos_t)
-	extcoms.ExecRequestChan 	= make(chan elevTypes.ElevPos_t)		
-	extcoms.ExecResponseChan	= make(chan bool)
-	extcoms.EmgTriggerdChan 	= make(chan bool)
+	extcoms.SetLightChan    	= driver.SetLightChan	
+	//channels from comsManager
 	extcoms.AuctionOrder		= coms.AuctionOrder
 	extcoms.RequestScoreChan	= coms.RequestCost
 	extcoms.RespondScoreChan	= coms.RecvCost
@@ -37,7 +33,14 @@ func Init(ip string,driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManag
 	extcoms.RecvOrderUpdate 	= coms.RecvOrderUpdate
 	extcoms.AuctionDeadElev     = coms.AuctionDeadElev
 	extcoms.CheckNewElev        = coms.CheckNewElev
-	extcoms.UpdateElevInside    = coms.UpdateElevInside
+	extcoms.UpdateElevInside    = coms.UpdateElevInside	
+	//Channels to FSM
+    extcoms.ElevPosRequest		= make(chan elevTypes.ElevPos_t)
+	extcoms.NewOrdersChan		= make(chan elevTypes.Order_t)
+	extcoms.ExecdOrderChan  	= make(chan elevTypes.ElevPos_t)
+	extcoms.ExecRequestChan 	= make(chan elevTypes.ElevPos_t)		
+	extcoms.ExecResponseChan	= make(chan bool)
+	extcoms.EmgTriggerdChan 	= make(chan bool)	
 
 	orders.MY_IP = ip
 	orders.queues = tableMap
@@ -56,7 +59,6 @@ func (self *Orders_s)orderHandler(){
 		case msg:= <-self.ExtComs.RecvOrderUpdate:	
 		    fmt.Println("			order.orderHandler: recieved on RecvOrderUpdate, msg: ",msg) 
 			self.updateQueue(msg.Order, msg.Payload)
-			//send ACK?
 
 		case order:= <-self.ExtComs.RequestScoreChan:
 		    fmt.Println("			order.orderHandler: recieved on RequestScoreChan, order: ",order) 
@@ -67,9 +69,9 @@ func (self *Orders_s)orderHandler(){
 		case order:=<-self.ExtComs.AddOrder:
 		    fmt.Println("			order.orderHandler: recieved on AddOrder, order: ",order) 
 		    self.updateQueue(order, self.MY_IP)
-		    if self.isQueueEmpty(self.MY_IP){
+		    /*if self.isQueueEmpty(self.MY_IP){
 		        self.ExtComs.NewOrdersChan <- order
-		    }
+		    }*/
 		    
 		case deadElev:= <-self.ExtComs.AuctionDeadElev:
 		    fmt.Println("			order.orderHandler: recieved on AuctionDeadElev, deadElev: ",deadElev)
