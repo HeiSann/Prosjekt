@@ -40,7 +40,7 @@ func ExternalChannelsInit(net elevTypes.Net_ExtComs_s)elevTypes.ComsManager_ExtC
 	extChans:=elevTypes.ComsManager_ExtComs_s{}
 	//communication to network
 	extChans.RecvMsg=net.RecvMsg
-	extChans.PingMsg=net.PingMsg
+	extChans.HeartbeatMsg=net.HeartbeatMsg
 	extChans.SendMsg=net.SendMsg
 	extChans.SendMsgToAll=net.SendMsgToAll
 	extChans.DeadElev = net.DeadElev

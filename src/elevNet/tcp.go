@@ -156,8 +156,8 @@ func (elevnet *ElevNet_s) registerNewCon (con net.Conn, tcpConnections map[strin
 		tcpConnections[ip]=con
 		go elevnet.listenForTcpMsg(con)
 		fmt.Println("registerNewCon:started to listen")
-		//elevnet.intComs.newPinger<-ip
-		//fmt.Println("registerNewCon:send new pinger")
+		//elevnet.intComs.newHeartbeater<-ip
+		//fmt.Println("registerNewCon:send new heartbeater")
 	}else{
 		fmt.Println("registerNewCon:connection already excist")
 	}

@@ -40,7 +40,7 @@ type Net_ExtComs_s struct{
    RecvMsg chan Message
 	SendMsg chan Message  
 	SendBcast chan Message
-	PingMsg chan Message
+	HeartbeatMsg chan Message
 	SendMsgToAll chan Message
 	DeadElev chan string
 	NewElev chan string
@@ -65,7 +65,7 @@ type ComsManager_ExtComs_s struct{
 	RecvMsg chan Message
 	SendMsg chan Message  
 	SendBcast chan Message
-	PingMsg chan Message
+	HeartbeatMsg chan Message
 	SendMsgToAll chan Message
 	DeadElev chan string
 	NewElev chan string

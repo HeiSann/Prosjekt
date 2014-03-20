@@ -6,17 +6,14 @@ import ("fmt"
 		)
 
 
-
-
 func (comsMan *ComsManager_s)RecieveMessageFromNet(){
     for{
         msg:=<-comsMan.ExtComs.RecvMsg
         
-    
         switch msg.Type{
 				
-		  case "PING":
-		  		comsMan.ExtComs.PingMsg<-msg
+		  case "HEARTBEAT":
+		  		comsMan.ExtComs.HeartbeatMsg<-msg
 
 		  case "COST":
 		  		comsMan.intComs.costMsg<-msg

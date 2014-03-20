@@ -6,7 +6,7 @@ import (
 	"elevTypes"
 )
 
-const UDP_PORT ="20000"//All Elevs listen to this Broadcast Port
+const UDP_PORT ="20000" //All Elevs send and listen to this Broadcast Port
 
 func (fromComs *ElevNet_s) SendMsgToAll(){
     bcastIP:=GetBroadcastIP(GetMyIP())
