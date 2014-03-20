@@ -1,9 +1,9 @@
 package elevNet
 import( "time"
-		"elevTypes"
-		"fmt"
-	   )
-	   
+        "elevTypes"
+        "fmt"
+       )
+       
 const HEARTBEAT_TIMEOUT_MILLI = 70
 const SLEEP_TIME = 20
 
@@ -13,22 +13,22 @@ func (elevNet *ElevNet_s) RefreshNetwork(){
 	go elevNet.intComs.startHeartbeatTimer()
 	go elevNet.broadCastHeartbeat()
 	
-	for{
-		select{
-		case msg := <-elevNet.ExtComs.HeartbeatMsg:
+    for{
+        select{
+        case msg := <-elevNet.ExtComs.HeartbeatMsg:
 			elevNet.updateHeartbeatTime(elevHeartbeatTimes,msg) 
 						
-		case <-elevNet.intComs.timerOut:
+        case <-elevNet.intComs.timerOut:
 			go elevNet.intComs.performTimeControl(elevHeartbeatTimes)
 						
-		case deadIp := <-elevNet.intComs.deadHeartbeater:
-			fmt.Println("Refresh Newtork:heartbeat case deadIP")
-			elevNet.deleteHeartbeater(elevHeartbeatTimes,deadIp)
+        case deadIp := <-elevNet.intComs.deadHeartbeater:
+        	fmt.Println("Refresh Newtork:heartbeat case deadIP")
+            elevNet.deleteHeartbeater(elevHeartbeatTimes,deadIp)
 		default:
 			time.Sleep(time.Millisecond*SLEEPTIME)
-					
-		}//end select
-	}//end for
+                    
+        }//end select
+    }//end for
 }
 
 
@@ -61,9 +61,9 @@ func (toRefresh *InternalChan_s)performTimeControl(heartbeatMap map[string]time.
 		if currentTime.After(heartbeattime){
 			fmt.Println("performTimeControl :oh no, my friend died")
 			toRefresh.deadHeartbeater<-ip	
-			fmt.Println("performTimeControl: deadip sendt")		
-		}
-	}
+			fmt.Println("performTimeControl: deadip sendt")    	
+	    }
+    }
 }
 
 
@@ -87,15 +87,15 @@ func (toNet *ElevNet_s) broadCastHeartbeat(){
 
 
 func (ToRefresh *InternalChan_s) startHeartbeatTimer(){
-	for{
-		time.Sleep(time.Millisecond*HEARTBEAT_TIMEOUT_MILLI)
-		ToRefresh.timerOut<-true
-	}
+    for{
+        time.Sleep(time.Millisecond*HEARTBEAT_TIMEOUT_MILLI)
+        ToRefresh.timerOut<-true
+    }
 }
 
 
 func ConstructHeartbeat(ipTo string, ipFrom string)elevTypes.Message{
-	msg:=elevTypes.Message{}
+    msg:=elevTypes.Message{}
 	msg.To =ipTo
 	msg.From=ipFrom
 	msg.Type ="HEARTBEAT"

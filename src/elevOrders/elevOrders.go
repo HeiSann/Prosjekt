@@ -1,7 +1,7 @@
 package elevOrders
 
 import(
-	"fmt"
+    "fmt"
 	"time"
 	"elevTypes"
 )
@@ -9,7 +9,7 @@ import(
 
 
 type Orders_s struct{
-	MY_IP		   string
+    MY_IP           string
 	queues			map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool
 	emg			bool
 	ExtComs			elevTypes.Orders_ExtComs_s
@@ -18,13 +18,13 @@ type Orders_s struct{
 func Init(ip string, driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManager_ExtComs_s) Orders_s{
 	fmt.Println("			elevOrders.init()...")
 
-	orders := Orders_s{}
+    orders := Orders_s{}
 	tableMap := make(map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool)
 	
 	extcoms := elevTypes.Orders_ExtComs_s{}	
 	//Channels from Driver
 	extcoms.ButtonChan			= driver.ButtonChan
-	extcoms.SetLightChan		= driver.SetLightChan	
+	extcoms.SetLightChan    	= driver.SetLightChan	
 	//channels from comsManager
 	extcoms.AuctionOrder		= coms.AuctionOrder
 	extcoms.RequestScoreChan	= coms.RequestCost
@@ -32,11 +32,11 @@ func Init(ip string, driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsMana
 	extcoms.AddOrder			= coms.AddOrder
 	extcoms.SendOrderUpdate 	= coms.SendOrderUpdate
 	extcoms.RecvOrderUpdate 	= coms.RecvOrderUpdate
-	extcoms.AuctionDeadElev	 = coms.AuctionDeadElev
-	extcoms.CheckNewElev		= coms.CheckNewElev
-	extcoms.UpdateElevInside	= coms.UpdateElevInside	
+	extcoms.AuctionDeadElev     = coms.AuctionDeadElev
+	extcoms.CheckNewElev        = coms.CheckNewElev
+	extcoms.UpdateElevInside    = coms.UpdateElevInside	
 	//Channels to FSM
-	extcoms.ElevPosRequest		= make(chan elevTypes.ElevPos_t)
+    extcoms.ElevPosRequest		= make(chan elevTypes.ElevPos_t)
 	extcoms.NewOrdersChan		= make(chan elevTypes.Order_t)
 	extcoms.ExecdOrderChan  	= make(chan elevTypes.ElevPos_t)
 	extcoms.ExecRequestChan 	= make(chan elevTypes.ElevPos_t)		
@@ -49,7 +49,7 @@ func Init(ip string, driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsMana
 	
 	go orders.orderHandler()
  	fmt.Println("			orders.init: OK!")
-	return orders
+    return orders
 }
 
 func (self *Orders_s)orderHandler(){
@@ -58,36 +58,36 @@ func (self *Orders_s)orderHandler(){
 		select{
 		/* from ComHandler */
 		case msg:= <-self.ExtComs.RecvOrderUpdate:	
-			fmt.Println("			order.orderHandler: recieved on RecvOrderUpdate, msg: ",msg) 
+		    fmt.Println("			order.orderHandler: recieved on RecvOrderUpdate, msg: ",msg) 
 			self.updateQueue(msg.Order, msg.Payload)
 
 		case order:= <-self.ExtComs.RequestScoreChan:
-			fmt.Println("			order.orderHandler: recieved on RequestScoreChan, order: ",order) 
+		    fmt.Println("			order.orderHandler: recieved on RequestScoreChan, order: ",order) 
 			elevPos:= self.getElevPos()
 			score := getScore(order, elevPos, self.queues[self.MY_IP]) 
 			self.ExtComs.RespondScoreChan <- score
 			
 		case order:=<-self.ExtComs.AddOrder:
-			fmt.Println("			order.orderHandler: recieved on AddOrder, order: ",order) 
-			self.updateQueue(order, self.MY_IP)
-			
+		    fmt.Println("			order.orderHandler: recieved on AddOrder, order: ",order) 
+		    self.updateQueue(order, self.MY_IP)
+		    
 		case deadElev:= <-self.ExtComs.AuctionDeadElev:
-			fmt.Println("			order.orderHandler: recieved on AuctionDeadElev, deadElev: ",deadElev)
-			self.handleDeadElev(deadElev)
+		    fmt.Println("			order.orderHandler: recieved on AuctionDeadElev, deadElev: ",deadElev)
+		    self.handleDeadElev(deadElev)
 		
 		case msg:= <-self.ExtComs.CheckNewElev:
 			// fill out empty msg with old inside-order and send back
-			fmt.Println("			order.orderHandler: recieved on CheckNewElev, msg: ",msg)
-			newElev:=msg.To
-			queue := self.queues[newElev]
-			for floor:=0 ; floor < elevTypes.N_FLOORS ; floor++{
-				if queue[floor][elevTypes.NONE]{
-					msg.Order = elevTypes.Order_t{floor, elevTypes.NONE, true}
-					self.ExtComs.UpdateElevInside <- msg
-					fmt.Println("			order.orderHandler: found inside order, sending msg: ",msg)
-				}
-			} 
-			
+		    fmt.Println("			order.orderHandler: recieved on CheckNewElev, msg: ",msg)
+		    newElev:=msg.To
+		    queue := self.queues[newElev]
+		    for floor:=0 ; floor < elevTypes.N_FLOORS ; floor++{
+		        if queue[floor][elevTypes.NONE]{
+		            msg.Order = elevTypes.Order_t{floor, elevTypes.NONE, true}
+		            self.ExtComs.UpdateElevInside <- msg
+		            fmt.Println("			order.orderHandler: found inside order, sending msg: ",msg)
+		        }
+		    } 
+		    
 		/* from FSM */
 		case elevPos:= <-self.ExtComs.ExecdOrderChan:
 			fmt.Println("			orders.orderHandler: got execdorder at Pos: ", elevPos)			
@@ -102,8 +102,8 @@ func (self *Orders_s)orderHandler(){
 			fmt.Println("			orders.orderHandler: got execdOrder: ", order)
 			// if orders pending, send next order to elevFSM
 			if nextOrder.Active{
-				self.ExtComs.NewOrdersChan <- nextOrder
-				fmt.Println("			orders.orderHandler: next order sendt to fsm: ", nextOrder)
+			    self.ExtComs.NewOrdersChan <- nextOrder
+			    fmt.Println("			orders.orderHandler: next order sendt to fsm: ", nextOrder)
 			}
 
 		case elevPos:= <-self.ExtComs.ExecRequestChan:
@@ -114,10 +114,10 @@ func (self *Orders_s)orderHandler(){
 			fmt.Println("			orders.orderHandler: elevPos: ", elevPos)
 			fmt.Println("			orders.orderHandler: next_order: ", next_order)
 			if elevPos.Floor == next_order.Floor{
-				fmt.Println("			orders.orderHandler: sending true on execResponse ")
+			    fmt.Println("			orders.orderHandler: sending true on execResponse ")
 				self.ExtComs.ExecResponseChan <- true
 			}else{
-				fmt.Println("			orders.orderHandler: sending false on execResponse ")
+			    fmt.Println("			orders.orderHandler: sending false on execResponse ")
 			}
 
 		case self.emg =<-self.ExtComs.EmgTriggerdChan:
@@ -153,40 +153,40 @@ func (self *Orders_s)updateQueue(order elevTypes.Order_t, IP string){
 	wasEmpty := self.isQueueEmpty(IP)	
 	switch(order.Active){
 		case true:
-			queue := self.queues[IP]
+		    queue := self.queues[IP]
 			queue[order.Floor][order.Direction] = true
 			self.queues[IP] = queue
 			//only handle orders that are outside-orders or our own orders
 			if IP == self.MY_IP || order.Direction != elevTypes.NONE{
-				self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, true}
-				fmt.Println("			orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
+			    self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, order.Direction, true}
+			    fmt.Println("			orders.updating_queue: sendt light in SetLightChan: ", elevTypes.Light_t{order.Floor, order.Direction, true})
 			}
 		case false:
-			if IP == self.MY_IP{ 
+		    if IP == self.MY_IP{ 
 				self.deleteOrder(order, IP)
 
-				next_order := getNextOrder(self.queues[IP], order)
+		        next_order := getNextOrder(self.queues[IP], order)
 				//check for double-order executions
 				fmt.Println("			orders.updating_queue: order was: ", order)
 				fmt.Println("			orders.updating_queue: next_order is: ", next_order)
 			 
-				if (next_order.Floor == order.Floor ){
+			    if (next_order.Floor == order.Floor ){
 					fmt.Println("			orders.updating_queue: Double exec!")
-					also_execd := next_order
-					also_execd.Active = false
-					self.ExtComs.SendOrderUpdate <- also_execd
-					self.deleteOrder(also_execd, IP)
-				}
-			}else{
-				self.deleteOrder(order, IP)
-			}
+			        also_execd := next_order
+			        also_execd.Active = false
+			        self.ExtComs.SendOrderUpdate <- also_execd
+			        self.deleteOrder(also_execd, IP)
+			    }
+	        }else{
+	            self.deleteOrder(order, IP)
+	        }
 	}
 	if wasEmpty && IP == self.MY_IP{
 		fmt.Println("			orders.update_queue: sending order to fsm on NewOrderChan!")
 		//Send new order to elevFSM
 		self.ExtComs.NewOrdersChan <- order
 	}
-	fmt.Println("		   queues are now: ", self.queues)
+	fmt.Println("           queues are now: ", self.queues)
 }
 
 
@@ -207,23 +207,23 @@ func (self *Orders_s)isQueueEmpty(ip string) bool{
 
 
 func (self *Orders_s)getElevPos() elevTypes.ElevPos_t{
-	pos := elevTypes.ElevPos_t{}
-	self.ExtComs.ElevPosRequest <- pos
-	pos =<-self.ExtComs.ElevPosRequest
-	return pos
+    pos := elevTypes.ElevPos_t{}
+    self.ExtComs.ElevPosRequest <- pos
+    pos =<-self.ExtComs.ElevPosRequest
+    return pos
 }
 
 
 func (self *Orders_s)handleDeadElev(deadElev string){
-	queue := self.queues[deadElev]
-	for floor:=0; floor< elevTypes.N_FLOORS; floor++{
+    queue := self.queues[deadElev]
+    for floor:=0; floor< elevTypes.N_FLOORS; floor++{
 		if	queue[floor][elevTypes.UP] == true{
-			self.ExtComs.AuctionOrder <- elevTypes.Order_t{floor,elevTypes.UP,true}
-			queue[floor][elevTypes.UP] = false
-			
+		    self.ExtComs.AuctionOrder <- elevTypes.Order_t{floor,elevTypes.UP,true}
+		    queue[floor][elevTypes.UP] = false
+		    
 		}else if queue[floor][elevTypes.DOWN] == true{
-			self.ExtComs.AuctionOrder <- elevTypes.Order_t{floor,elevTypes.DOWN,true}
-			queue[floor][elevTypes.DOWN] = false
+		    self.ExtComs.AuctionOrder <- elevTypes.Order_t{floor,elevTypes.DOWN,true}
+		    queue[floor][elevTypes.DOWN] = false
 		}
 	}
 	self.queues[deadElev] = queue
@@ -246,7 +246,7 @@ func getOrderAtPos(elevPos elevTypes.ElevPos_t, queue[elevTypes.N_FLOORS][elevTy
 
 
 func (self *Orders_s)deleteOrder(order elevTypes.Order_t, IP string){
-	queue := self.queues[IP]
+    queue := self.queues[IP]
 	queue[order.Floor][elevTypes.NONE] = false
 	queue[order.Floor][order.Direction] = false
 	self.queues[IP] = queue
@@ -259,29 +259,29 @@ func (self *Orders_s)deleteOrder(order elevTypes.Order_t, IP string){
 
 
 func (self *Orders_s)deleteAllOrdersOnFloor(order elevTypes.Order_t, IP string){
-	queue := self.queues[IP]
+    queue := self.queues[IP]
    	if order.Floor == 0 || order.Floor == elevTypes.N_FLOORS-1{
    		self.deleteOrder(order, IP)
 	}else{
 		queue = self.queues[IP]
-		queue[order.Floor][elevTypes.NONE] = false
-		queue[order.Floor][elevTypes.UP] = false
-		queue[order.Floor][elevTypes.DOWN] = false
+        queue[order.Floor][elevTypes.NONE] = false
+        queue[order.Floor][elevTypes.UP] = false
+        queue[order.Floor][elevTypes.DOWN] = false
 		self.queues[IP] = queue
-		self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
-		self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.UP, false}
-		self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.DOWN, false}
-		fmt.Println("		   delete_all_orders: deleted floor ", order.Floor)
+        self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.NONE, false}
+        self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.UP, false}
+        self.ExtComs.SetLightChan <- elevTypes.Light_t{order.Floor, elevTypes.DOWN, false}
+		fmt.Println("           delete_all_orders: deleted floor ", order.Floor)
    	}
    	
 }
 
 
 func MakeDouble(original Orders_s) Orders_s{
-	copy := Orders_s{}
-	copy.MY_IP = original.MY_IP	 
-	copy.queues = original.queues	   
-	copy.emg = original.emg		   
-	copy.ExtComs = original.ExtComs	 
-	return copy
+    copy := Orders_s{}
+    copy.MY_IP = original.MY_IP     
+    copy.queues = original.queues       
+    copy.emg = original.emg           
+    copy.ExtComs = original.ExtComs     
+    return copy
 }

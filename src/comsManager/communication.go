@@ -7,10 +7,10 @@ import ("fmt"
 
 
 func (comsMan *ComsManager_s)RecieveMessageFromNet(){
-	for{
-		msg:=<-comsMan.ExtComs.RecvMsg
-		
-		switch msg.Type{
+    for{
+        msg:=<-comsMan.ExtComs.RecvMsg
+        
+        switch msg.Type{
 				
 		  case "HEARTBEAT":
 		  		comsMan.ExtComs.HeartbeatMsg<-msg
@@ -33,15 +33,15 @@ func (comsMan *ComsManager_s)RecieveMessageFromNet(){
 				comsMan.ExtComs.RecvOrderUpdate<-msg
 				fmt.Println("\t RecieveMessegeFromNet: UPDATE_BACKUP with order;", msg.Order)
 
-		default:
-			fmt.Println("\t", msg.From)
-			fmt.Println("\tnot able to read msg header. Something went terribly wrong, oh god, i have dissapointed the other elevators, they will hate me so much. Pls ctrlC me right now I cant stand this pain any longer")
-	   }
-	}
+        default:
+            fmt.Println("\t", msg.From)
+            fmt.Println("\tnot able to read msg header. Something went terribly wrong, oh god, i have dissapointed the other elevators, they will hate me so much. Pls ctrlC me right now I cant stand this pain any longer")
+       }
+    }
 }
 
 
-func (self *ComsManager_s)InternalCommunication(){ 
+func (self *ComsManager_s)ManageCommunicationFromNetAndOrder(){ 
 	for{
 		select{
 		case order:=<- self.ExtComs.SendOrderUpdate:
@@ -52,12 +52,12 @@ func (self *ComsManager_s)InternalCommunication(){
 			
 		case order:=<-self.intComs.needCost:
 			needCostMsg:=constructNeedCostMsg(self.Ip, order)
-			fmt.Println("\t comsManager: needcostMsg created. Trying to send")
-			self.ExtComs.SendMsgToAll<-needCostMsg
-			fmt.Println("\t comsManager: send need cost Msg to all tcp elevators")		
-		
-		case deadIp:=<-self.ExtComs.DeadElev:
-			fmt.Println("\t ForwardMsg: dead ip:", deadIp)
+    		fmt.Println("\t comsManager: needcostMsg created. Trying to send")
+    		self.ExtComs.SendMsgToAll<-needCostMsg
+    		fmt.Println("\t comsManager: send need cost Msg to all tcp elevators")		
+    	
+    	case deadIp:=<-self.ExtComs.DeadElev:
+    		fmt.Println("\t ForwardMsg: dead ip:", deadIp)
 			self.ExtComs.AuctionDeadElev<-deadIp		
 
 		case newIp :=<-self.ExtComs.NewElev:

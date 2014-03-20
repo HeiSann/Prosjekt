@@ -26,18 +26,18 @@ const(
 )
 
 type intComs_s struct{
-	eventChan		chan Event_t
+    eventChan		chan Event_t
 	timeoutChan		chan bool
 	newOrderChan 	chan elevTypes.Order_t
 	floorChan		chan int
 }
 
 type Fsm_s struct{
-	table		[][]func()
+    table		[][]func()
 	state 		State_t
 	lastDir		elevTypes.Direction_t
 	lastFloor   int 
 	intComs		intComs_s
-	ExtComs	 elevTypes.Fsm_ExtComs_s
+	ExtComs     elevTypes.Fsm_ExtComs_s
 }
 

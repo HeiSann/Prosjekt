@@ -44,33 +44,33 @@ WhileAuction:
 
 func (coms *ComsManager_s)startAuction(order elevTypes.Order_t){
 	fmt.Println("\t auction:started auction of order", order)
-	limit:=time.Now().Add(time.Millisecond*AUCTION_DURATION)
-	
-	cost:=coms.getMyCost(order)
-	fmt.Println("\t auction: got own cost", cost) 
+    limit:=time.Now().Add(time.Millisecond*AUCTION_DURATION)
+    
+    cost:=coms.getMyCost(order)
+    fmt.Println("\t auction: got own cost", cost) 
 	winner:=coms.Ip
 	fmt.Println("\t auction: will read on channel:",coms.intComs.newCostMsg)
 	for{
-		currentTime:=time.Now()
-		fmt.Println("\t auction :",currentTime)
-		
-		select{
+	    currentTime:=time.Now()
+	    fmt.Println("\t auction :",currentTime)
+	    
+	    select{
 		case msg:=<-coms.intComs.newCostMsg:
 			temp,_:=strconv.Atoi(msg.Payload)
 			fmt.Println("\t auction: recieved cost", temp)
-			if temp<cost{
+		    if temp<cost{
 				cost=temp
-				winner=msg.From	
+		        winner=msg.From	
 		   	} 		
 		default:
-			time.Sleep(time.Millisecond*SELECT_SLEEP_TIME)
-			fmt.Println("\t auction: default")
+		    time.Sleep(time.Millisecond*SELECT_SLEEP_TIME)
+		    fmt.Println("\t auction: default")
 		}
 		if currentTime.After(limit){
-			fmt.Println("\tauction: timeout")
-			break
-		}
-	  }
+	    	fmt.Println("\tauction: timeout")
+	        break
+	    }
+      }
 	coms.intComs.auctionDone<-winner
 	fmt.Println("\t auction: auction done. winner sendt to auction manager", coms.intComs.auctionDone)
 }
@@ -98,7 +98,7 @@ func (self *ComsManager_s)HandleAuctionWinner(winner string, order elevTypes.Ord
 func (self *ComsManager_s)getMyCost(order elevTypes.Order_t)int{ 
 	self.ExtComs.RequestCost<-order
 	cost:=<-self.ExtComs.RecvCost
-	return cost
+    return cost
 }
 
 

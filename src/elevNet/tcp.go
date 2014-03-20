@@ -36,16 +36,16 @@ func (elevNet *ElevNet_s)ManageTCPCom(){
 			go elevNet.sendTcpMsg(msg, tcpConnections)
 			
 		case ip := <-elevNet.intComs.deadElev:
-				fmt.Println("ManageTCPCom:case dead")
-			deleteCon(ip, tcpConnections)
-			
-		case msg:=<-elevNet.ExtComs.SendMsgToAll:
-			fmt.Println("ManageTCPCom:case sendMsgToAll")
-			elevNet.sendTcpToAll(msg, tcpConnections)
-		
-		case msg:= <-elevNet.intComs.tcpFail:
-			elevNet.ExtComs.FailedTcpMsg<-msg
-			fmt.Println("ManageTCPCom:case tcpFail")
+        		fmt.Println("ManageTCPCom:case dead")
+            deleteCon(ip, tcpConnections)
+            
+        case msg:=<-elevNet.ExtComs.SendMsgToAll:
+        	fmt.Println("ManageTCPCom:case sendMsgToAll")
+        	elevNet.sendTcpToAll(msg, tcpConnections)
+        
+        case msg:= <-elevNet.intComs.tcpFail:
+        	elevNet.ExtComs.FailedTcpMsg<-msg
+        	fmt.Println("ManageTCPCom:case tcpFail")
 		default:
 			time.Sleep(time.Millisecond*SLEEPTIME)
 			
@@ -56,9 +56,9 @@ func (elevNet *ElevNet_s)ManageTCPCom(){
 
 func (toComsMan *ElevNet_s) listenForTcpMsg (con net.Conn){
 	bstream := make([]byte, BUFF_SIZE)
-	for {
+    for {
 		n, err := con.Read(bstream[0:])
-		if err!=nil {
+	    if err!=nil {
 			//fmt.Println("error in listen")			
 		}else{
 			var msg elevTypes.Message
@@ -168,13 +168,13 @@ func (elevnet *ElevNet_s) registerNewCon (con net.Conn, tcpConnections map[strin
 
 
 func deleteCon(ip string, tcpConnections map[string]net.Conn){
-	_, ok :=tcpConnections[ip]
-	if !ok{
-		fmt.Println("deleteCon:connection already lost")
-	}else{
-		tcpConnections[ip].Close()
-		delete(tcpConnections,ip)  
-	}
+    _, ok :=tcpConnections[ip]
+    if !ok{
+        fmt.Println("deleteCon:connection already lost")
+    }else{
+        tcpConnections[ip].Close()
+        delete(tcpConnections,ip)  
+    }
 }
 
 
