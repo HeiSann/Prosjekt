@@ -57,9 +57,9 @@ func (self *Fsm_s)action_start(){
 			self.intComs.eventChan <- EXEC_ORDER
 			//fmt.Println("				fsm.action_start: exec_order sendt int.eventChan")
 		case order.Floor < curr_floor:
-			self.start_down()
+			self.startDown()
 		case order.Floor > curr_floor:
-			self.start_up()
+			self.startUp()
 	}
 }
 
@@ -115,7 +115,7 @@ func action_dummy(){
 }
 
 /* Finite State Machine initializations */
-func (fsm *Fsm_s)init_fsm_table(){
+func (fsm *Fsm_s)initFsmTable(){
 	fsm.table = [][]func(){
 /*STATES:	  \	EVENTS:	//NewOrder			//FloorReached        	//Exec  				//TimerOut		//Obst				//EmgPressed
 /*IDLE       */  []func(){fsm.action_start,	action_dummy,			fsm.action_exec_same,	action_dummy,	fsm.action_pause,	fsm.action_stop},
@@ -128,13 +128,13 @@ func (fsm *Fsm_s)init_fsm_table(){
 	}
 }
 
-func(self *Fsm_s)init_intComs(){
+func(self *Fsm_s)initIntComs(){
 	self.intComs.eventChan			= make(chan Event_t, 2)
 	self.intComs.timeoutChan		= make(chan bool)
 	self.intComs.newOrderChan		= make(chan elevTypes.Order_t)
 }
 
-func(self *Fsm_s)init_ExtComs(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s){	
+func(self *Fsm_s)initExtComs(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s){	
 	self.ExtComs.ButtonChan 		= driver.ButtonChan
 	self.ExtComs.FloorChan 			= driver.SensorChan
 	self.ExtComs.StopButtonChan	    = driver.StopButtonChan
@@ -173,16 +173,16 @@ func Init(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s)
    fmt.Println("				fsm.init()...")
 
 	fsm := Fsm_s{}
-	fsm.init_fsm_table()
-	fsm.init_intComs()
-	fsm.init_ExtComs(driver, orders)
+	fsm.initFsmTable()
+	fsm.initIntComs()
+	fsm.initExtComs(driver, orders)
 
 	fsm.start()
 	
 	//start the fsm routunes
 	go fsm.update()
-	go fsm.generate_events()
-	go fsm.answer_pos_requests()
+	go fsm.generateEvents()
+	go fsm.answerPosRequests()
 	
 	fmt.Println("				fsm.state is: ", fsm.state)
 	fmt.Println("				fsm.lastFloor is: ", fsm.lastFloor)
@@ -193,7 +193,7 @@ func Init(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s)
 
 /* FSM help functions */
 
-func (self *Fsm_s)answer_pos_requests(){
+func (self *Fsm_s)answerPosRequests(){
     pos:= elevTypes.ElevPos_t{}
     for{
         pos= <-self.ExtComs.ElevPosRequest
@@ -202,7 +202,7 @@ func (self *Fsm_s)answer_pos_requests(){
         self.ExtComs.ElevPosRequest <- pos
     }
 }
-func (self *Fsm_s)start_down(){
+func (self *Fsm_s)startDown(){
 	fmt.Println("				fsm.start_down")
 	self.ExtComs.MotorChan <- elevTypes.DOWN
 	self.state = MOVING_DOWN
@@ -210,7 +210,7 @@ func (self *Fsm_s)start_down(){
 	fmt.Println("				fsm: MOVING_DOWN\n")
 }
 
-func (self *Fsm_s)start_up(){
+func (self *Fsm_s)startUp(){
     fmt.Println("				fsm.start_up")
 	self.ExtComs.MotorChan <- elevTypes.UP
 	self.state = MOVING_UP
@@ -232,7 +232,7 @@ func startTimer(timeOutChan chan bool, timeInterval time.Duration){
     timeOutChan <- true 
 }
 
-func (fsm *Fsm_s)generate_events(){	
+func (fsm *Fsm_s)generateEvents(){	
 	for{
         select{
             case <-fsm.ExtComs.StopButtonChan:
@@ -274,3 +274,14 @@ func (fsm *Fsm_s)generate_events(){
 	}
 }
 
+MakeDouble(original Fsm_s{})copy Fsm_s{}{
+	copy. := Fsm_s{}
+    copy.table = original.table		
+	copy.state = original.state	
+	copy.lastDir = original.lastDir	
+	copy.lastFloor = original.lastFloor  
+	copy.intComs = original.intComs
+	copy.ExtComs = original.ExtComs
+
+	return copy
+}

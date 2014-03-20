@@ -13,7 +13,6 @@ type Orders_s struct{
 	queues			map[string][elevTypes.N_FLOORS][elevTypes.N_DIR]bool
 	emg				bool
 	ExtComs			elevTypes.Orders_ExtComs_s
-	mutex           sync.Mutex
 }
 
 func Init(ip string,driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsManager_ExtComs_s) Orders_s{
@@ -57,25 +56,25 @@ func (self *Orders_s)orderHandler(){
 		/* from ComHandler */
 		case msg:= <-self.ExtComs.RecvOrderUpdate:	
 		    fmt.Println("			order.orderHandler: recieved on RecvOrderUpdate, msg: ",msg) 
-			self.update_queue(msg.Order, msg.Payload)
+			self.updateQueue(msg.Order, msg.Payload)
 			//send ACK?
 
 		case order:= <-self.ExtComs.RequestScoreChan:
 		    fmt.Println("			order.orderHandler: recieved on RequestScoreChan, order: ",order) 
-			elevPos:= self.get_elev_pos()
+			elevPos:= self.getElevPos()
 			score := getScore(order, elevPos, self.queues[self.MY_IP]) 
 			self.ExtComs.RespondScoreChan <- score
 			
 		case order:=<-self.ExtComs.AddOrder:
 		    fmt.Println("			order.orderHandler: recieved on AddOrder, order: ",order) 
-		    self.update_queue(order, self.MY_IP)
+		    self.updateQueue(order, self.MY_IP)
 		    if self.isQueueEmpty(self.MY_IP){
 		        self.ExtComs.NewOrdersChan <- order
 		    }
 		    
 		case deadElev:= <-self.ExtComs.AuctionDeadElev:
 		    fmt.Println("			order.orderHandler: recieved on AuctionDeadElev, deadElev: ",deadElev)
-		    self.handle_dead_elev(deadElev)
+		    self.handleDeadElev(deadElev)
 		
 		case msg:= <-self.ExtComs.CheckNewElev:
 		    fmt.Println("			order.orderHandler: recieved on CheckNewElev, msg: ",msg)
@@ -94,11 +93,11 @@ func (self *Orders_s)orderHandler(){
 			order := getOrderAtPos(elevPos, self.queues[self.MY_IP])
 			order.Active = false
 			fmt.Println("			orders.orderHandler: found execdOrder: ", order)
-			self.update_queue(order, self.MY_IP)
+			self.updateQueue(order, self.MY_IP)
 			fmt.Println("			orders.orderHandler: updating queue success! trying to send: self.ExtComs.SendOrderUpdate <- order. ChanID: ", self.ExtComs.SendOrderUpdate)
 			self.ExtComs.SendOrderUpdate <- order
 			fmt.Println("			orders.orderHandler: orderUpdate sendt! trying to check nextOrder")
-			nextOrder:= get_next_order(self.queues[self.MY_IP], order)
+			nextOrder:= getNextOrder(self.queues[self.MY_IP], order)
 			fmt.Println("			orders.orderHandler: got execdOrder: ", order)
 			if nextOrder.Active{
 			    self.ExtComs.NewOrdersChan <- nextOrder
@@ -110,7 +109,7 @@ func (self *Orders_s)orderHandler(){
 			queue := self.queues[self.MY_IP]
 			order := elevTypes.Order_t{elevPos.Floor, elevPos.Direction, false}
 			//this_order:= getOrderAtPos(elevPos, queue) 
-			next_order:= get_next_order(queue, order)
+			next_order:= getNextOrder(queue, order)
 			fmt.Println("			orders.orderHandler: elevPos: ", elevPos)
 			fmt.Println("			orders.orderHandler: next_order: ", next_order)
 			if elevPos.Floor == next_order.Floor{
@@ -123,7 +122,7 @@ func (self *Orders_s)orderHandler(){
 		case self.emg =<-self.ExtComs.EmgTriggerdChan:
 			
 		case msg:= <-self.ExtComs.RecvOrderUpdate:
-			self.update_queue(msg.Order, msg.Payload)
+			self.updateQueue(msg.Order, msg.Payload)
 	
 		/* from driver */
 		case button := <-self.ExtComs.ButtonChan:
@@ -136,7 +135,7 @@ func (self *Orders_s)orderHandler(){
 				}
 			}
 			if order.Direction == elevTypes.NONE{
-				self.update_queue(order, self.MY_IP)
+				self.updateQueue(order, self.MY_IP)
 				self.ExtComs.SendOrderUpdate <- order
 			} else{
 			self.ExtComs.AuctionOrder <- order
@@ -146,7 +145,7 @@ func (self *Orders_s)orderHandler(){
 	}
 }
 
-func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
+func (self *Orders_s)updateQueue(order elevTypes.Order_t, IP string){
 	fmt.Println("			orders.updating_queue: ", order)
 	wasEmpty := self.isQueueEmpty(IP)	
 	switch(order.Active){
@@ -160,9 +159,9 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 			}
 		case false:
 		    if IP == self.MY_IP{ 
-				self.delete_order(order, IP)
+				self.deleteOrder(order, IP)
 
-		        next_order := get_next_order(self.queues[IP], order)
+		        next_order := getNextOrder(self.queues[IP], order)
 				//check for double-order executions
 				fmt.Println("			orders.updating_queue: order was: ", order)
 				fmt.Println("			orders.updating_queue: next_order is: ", next_order)
@@ -172,10 +171,10 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 			        also_execd := next_order
 			        also_execd.Active = false
 			        self.ExtComs.SendOrderUpdate <- also_execd
-			        self.delete_order(also_execd, IP)
+			        self.deleteOrder(also_execd, IP)
 			    }
 	        }else{
-	            self.delete_order(order, IP)
+	            self.deleteOrder(order, IP)
 	        }
 	}
 	if wasEmpty && IP == self.MY_IP{
@@ -185,14 +184,14 @@ func (self *Orders_s)update_queue(order elevTypes.Order_t, IP string){
 	fmt.Println("           queues are now: ", self.queues)
 }
 
-func (self *Orders_s)get_elev_pos() elevTypes.ElevPos_t{
+func (self *Orders_s)getElevPos() elevTypes.ElevPos_t{
     pos := elevTypes.ElevPos_t{}
     self.ExtComs.ElevPosRequest <- pos
     pos =<-self.ExtComs.ElevPosRequest
     return pos
 }
 
-func (self *Orders_s)handle_dead_elev(deadElev string){
+func (self *Orders_s)handleDeadElev(deadElev string){
     queue := self.queues[deadElev]
     for floor:=0; floor< elevTypes.N_FLOORS; floor++{
 		if	queue[floor][elevTypes.UP] == true{
@@ -236,7 +235,7 @@ func (self *Orders_s)isQueueEmpty(ip string) bool{
 	return true
 }	
 
-func (self *Orders_s)delete_order(order elevTypes.Order_t, IP string){
+func (self *Orders_s)deleteOrder(order elevTypes.Order_t, IP string){
     queue := self.queues[IP]
 	queue[order.Floor][elevTypes.NONE] = false
 	queue[order.Floor][order.Direction] = false
@@ -248,10 +247,10 @@ func (self *Orders_s)delete_order(order elevTypes.Order_t, IP string){
 	fmt.Println("			delete_order: deleted ", elevTypes.Order_t{order.Floor, elevTypes.NONE, false})
 }
 
-func (self *Orders_s)delete_all_orders_on_floor(order elevTypes.Order_t, IP string){
+func (self *Orders_s)deleteAllOrdersOnFloor(order elevTypes.Order_t, IP string){
     queue := self.queues[IP]
    	if order.Floor == 0 || order.Floor == elevTypes.N_FLOORS-1{
-   		self.delete_order(order, IP)
+   		self.deleteOrder(order, IP)
 	}else{
 		queue = self.queues[IP]
         queue[order.Floor][elevTypes.NONE] = false
@@ -266,10 +265,10 @@ func (self *Orders_s)delete_all_orders_on_floor(order elevTypes.Order_t, IP stri
    	
 }
 
-func next_order_above(this_floor int, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]bool) elevTypes.Order_t{
+func nextOrderAbove(thisFloor int, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]bool) elevTypes.Order_t{
     orderOut:= false
     orderUp:= false
-    for floor := this_floor; floor < elevTypes.N_FLOORS; floor++{
+    for floor := thisFloor; floor < elevTypes.N_FLOORS; floor++{
             orderOut = queue[floor][elevTypes.NONE]
             orderUp = queue[floor][elevTypes.UP]
             if orderOut{
@@ -285,10 +284,10 @@ func next_order_above(this_floor int, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]
     return elevTypes.Order_t{}
 }
 
-func next_order_below(this_floor int, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]bool) elevTypes.Order_t{
+func nextOrderBelow(thisFloor int, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]bool) elevTypes.Order_t{
         orderOut    := false
         orderDown   := false
-        for floor := this_floor; floor >= 0; floor--{
+        for floor := thisFloor; floor >= 0; floor--{
             orderOut = queue[floor][elevTypes.NONE]
             orderDown = queue[floor][elevTypes.DOWN]
             if orderOut{
@@ -304,67 +303,67 @@ func next_order_below(this_floor int, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]
     return elevTypes.Order_t{}
 }
 
-func get_next_order(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool,order elevTypes.Order_t) elevTypes.Order_t{
+func getNextOrder(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool,order elevTypes.Order_t) elevTypes.Order_t{
     fmt.Println("			order.get_next_order: with order: ", order)
 	fmt.Println("			order.get_next_order: queue is now: ", queue)
     switch(order.Direction){
         case elevTypes.UP:
-            order_up_above := next_order_above(order.Floor, queue)
-            if order_up_above.Active { 
-                fmt.Println("			order.get_next_order: returning order_up_above: ", order_up_above)
-                return order_up_above }
+            orderUpAbove := nextOrderAbove(order.Floor, queue)
+            if orderUpAbove.Active { 
+                fmt.Println("			order.get_next_order: returning orderUpAbove: ", orderUpAbove)
+                return orderUpAbove }
             
-            order_down := next_order_below(elevTypes.N_FLOORS-1, queue)
-            if order_down.Active { 
-                fmt.Println("			order.get_next_order: returning order_down: ", order_down)
-                return order_down }
+            orderDown := nextOrderBelow(elevTypes.N_FLOORS-1, queue)
+            if orderDown.Active { 
+                fmt.Println("			order.get_next_order: returning orderDown: ", orderDown)
+                return orderDown }
             
-            order_up_below := next_order_above(0, queue)
-            if order_up_below.Active { 
-                fmt.Println("			order.get_next_order: returning order_up_below: ", order_up_below)
-                return order_up_below }
+            orderUpBelow := nextOrderAbove(0, queue)
+            if orderUpBelow.Active { 
+                fmt.Println("			order.get_next_order: returning orderUpBelow: ", orderUpBelow)
+                return orderUpBelow }
             
             /*  no orders left  */
             return elevTypes.Order_t{}
             
         case elevTypes.DOWN:
-            order_down_below := next_order_below(order.Floor, queue)
-            if order_down_below.Active { 
-                fmt.Println("			order.get_next_order: returning order_down_below: ", order_down_below)
-                return order_down_below }
+            orderDown_below := nextOrderBelow(order.Floor, queue)
+            if orderDown_below.Active { 
+                fmt.Println("			order.get_next_order: returning orderDown_below: ", orderDown_below)
+                return orderDown_below }
             
-            order_up_below := next_order_above(0, queue)
-            if order_up_below.Active{ 
-                fmt.Println("			order.get_next_order: returning order_up_below: ", order_up_below)
-                return order_up_below }
+            orderUpBelow := nextOrderAbove(0, queue)
+            if orderUpBelow.Active{ 
+                fmt.Println("			order.get_next_order: returning orderUpBelow: ", orderUpBelow)
+                return orderUpBelow }
             
-            order_down_above := next_order_below(elevTypes.N_FLOORS-1, queue)
-            if order_down_above.Active{ 
-                fmt.Println("			order.get_next_order: returning order_down_above: ", order_down_above)
-                return order_down_above}
+            orderDownAbove := nextOrderBelow(elevTypes.N_FLOORS-1, queue)
+            if orderDownAbove.Active{ 
+                fmt.Println("			order.get_next_order: returning orderDownAbove: ", orderDownAbove)
+                return orderDownAbove}
             /*  no orders left  */
             return elevTypes.Order_t{}
 
 		case elevTypes.NONE:
-			order_up_above := next_order_above(order.Floor, queue)
-            if order_up_above.Active { 
-                fmt.Println("			order.get_next_order: returning order_up_above: ", order_up_above)
-                return order_up_above }
+			orderUpAbove := nextOrderAbove(order.Floor, queue)
+            if orderUpAbove.Active { 
+                fmt.Println("			order.get_next_order: returning orderUpAbove: ", orderUpAbove)
+                return orderUpAbove }
 
-			order_down_below := next_order_below(order.Floor, queue)
-			if order_down_below.Active { 
-                fmt.Println("			order.get_next_order: returning order_down_below: ", order_down_below)
-                return order_down_below }
+			orderDown_below := nextOrderBelow(order.Floor, queue)
+			if orderDown_below.Active { 
+                fmt.Println("			order.get_next_order: returning orderDown_below: ", orderDown_below)
+                return orderDown_below }
 
-			order_down_above := next_order_below(elevTypes.N_FLOORS-1, queue)
-            if order_down_above.Active{ 
-                fmt.Println("			order.get_next_order: returning order_down_above: ", order_down_above)
-                return order_down_above}
+			orderDownAbove := nextOrderBelow(elevTypes.N_FLOORS-1, queue)
+            if orderDownAbove.Active{ 
+                fmt.Println("			order.get_next_order: returning orderDownAbove: ", orderDownAbove)
+                return orderDownAbove}
 
-			order_up_below := next_order_above(0, queue)
-            if order_up_below.Active { 
-                fmt.Println("			order.get_next_order: returning order_up_below: ", order_up_below)
-                return order_up_below }
+			orderUpBelow := nextOrderAbove(0, queue)
+            if orderUpBelow.Active { 
+                fmt.Println("			order.get_next_order: returning orderUpBelow: ", orderUpBelow)
+                return orderUpBelow }
 			return elevTypes.Order_t{}
         default:
             fmt.Println("			order.get_next_order: dir on request = NONE. this when first order is same floor")
@@ -426,3 +425,11 @@ func getScore(order elevTypes.Order_t, elev elevTypes.ElevPos_t, queue [elevType
 	return 255
 }
 
+func MakeDouble(original Orders_s) Orders_s{
+    copy := Orders_s{}
+    copy.MY_IP = original.MY_IP     
+    copy.queues = original.queues       
+    copy.emg = original.emg           
+    copy.ExtComs = original.ExtComs     
+    return copy
+}
