@@ -11,12 +11,6 @@ const SELECT_SLEEP_TIME = 2
 const AUCTION_DURATION = 70
 		
 
-func (self *ComsManager_s)getMyCost(order elevTypes.Order_t)int{ 
-	self.ExtComs.RequestCost<-order
-	cost:=<-self.ExtComs.RecvCost
-    return cost
-}
-
 
 func (self *ComsManager_s)manageAuction(){
 	for{
@@ -103,20 +97,10 @@ func (self *ComsManager_s)HandleAuctionWinner(winner string, order elevTypes.Ord
 
 
 
-func constructUpdateMsg(myIp string, order elevTypes.Order_t, actionElev string)elevTypes.Message{
-	msg:=elevTypes.Message{}
-	msg.From=myIp
-	msg.Type="UPDATE_BACKUP"
-	msg.Payload = actionElev
-	msg.Order = order	 
-	return msg
+func (self *ComsManager_s)getMyCost(order elevTypes.Order_t)int{ 
+	self.ExtComs.RequestCost<-order
+	cost:=<-self.ExtComs.RecvCost
+    return cost
 }
 
-func constructNewOrderMsg(ToIpadr string, myIp string, order elevTypes.Order_t)elevTypes.Message{
-	msg:=elevTypes.Message{} 
-	msg.To=ToIpadr
-	msg.From = myIp
-	msg.Type = "ADD_ORDER" 
-   	msg.Order= order
-	return msg
-}
+

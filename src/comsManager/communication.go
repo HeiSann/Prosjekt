@@ -3,7 +3,6 @@ package comsManager
 import ("fmt"
 		"time"
 		"elevTypes"
-		"strconv"
 		)
 
 
@@ -86,22 +85,5 @@ func (self *ComsManager_s)InternalCommunication(){
 }
 
 
-func constructCostMsg(myIp string, toIp string, order elevTypes.Order_t, cost int)elevTypes.Message{
-	msg:=elevTypes.Message{}
-	msg.From = myIp
-	msg.To = toIp
-	msg.Type="COST"
-	msg.Payload = strconv.Itoa(cost)
-	msg.Order = order	 
-	return msg
-}
-
-func constructNeedCostMsg(myIP string, order elevTypes.Order_t)elevTypes.Message{
-	msg:=elevTypes.Message{}
-	msg.From = myIP
-	msg.Type = "NEED_COST"
-	msg.Order = order
-	return msg
-}
 
 
