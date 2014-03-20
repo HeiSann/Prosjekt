@@ -49,9 +49,10 @@ func (elevNet *ElevNet_s)ManageTCPCom(){
 		default:
 			time.Sleep(time.Millisecond*SLEEPTIME)
 			
-		}//end select
-	}//end for
+		}
+	}
 }
+
 
 func (toComsMan *ElevNet_s) listenForTcpMsg (con net.Conn){
 	bstream := make([]byte, BUFF_SIZE)
@@ -70,6 +71,7 @@ func (toComsMan *ElevNet_s) listenForTcpMsg (con net.Conn){
 	}
 }
 
+
 func (toManager *InternalChan_s) listenForTcpCon(){
 	localAddr, err := net.ResolveTCPAddr("tcp",":"+TCP_PORT)
 	sock, err := net.ListenTCP("tcp", localAddr)
@@ -86,6 +88,7 @@ func (toManager *InternalChan_s) listenForTcpCon(){
 	time.Sleep(time.Millisecond*SLEEPTIME)
    	}
 }	
+
 
 func (self *ElevNet_s)sendTcpMsg(msg elevTypes.Message, tcpConnections map[string]net.Conn){
 	ipAddr := msg.To
@@ -104,13 +107,14 @@ trySend:
 				fmt.Println("SendTcpMsg: msg ok")
 				break trySend
 			}
-		}//id addOrderMsg, send back to self to take it. return false so that tcpHandler knows and sends back the msg 
+		}
 		go self.reConnectAndSend(msg, tcpConnections)
 	case false:
 		fmt.Println("error, not a connection, trying to connect")
 		go self.reConnectAndSend(msg, tcpConnections)		
 	}
 }	
+
 
 func (self *ElevNet_s)sendTcpToAll(msg elevTypes.Message, tcpConnections map[string]net.Conn){
 	for ip, _ := range tcpConnections{
@@ -139,12 +143,13 @@ func (toManager *InternalChan_s)connectElev(ipAdr string){
 				fmt.Println("ConnectElev:sendt con on chan")
 				break
 			}
-		}//end BIG if/else	
+		}
 		time.Sleep(time.Millisecond*SLEEPTIME)	
-	}//end for
+	}
 }
 
-func (elevnet *ElevNet_s) registerNewCon (con net.Conn, tcpConnections map[string]net.Conn){ //ta inn conn
+
+func (elevnet *ElevNet_s) registerNewCon (con net.Conn, tcpConnections map[string]net.Conn){
 	fmt.Println("registerNewCon: handle new Con")
 	ip:= getConIp(con)
 
@@ -156,12 +161,11 @@ func (elevnet *ElevNet_s) registerNewCon (con net.Conn, tcpConnections map[strin
 		tcpConnections[ip]=con
 		go elevnet.listenForTcpMsg(con)
 		fmt.Println("registerNewCon:started to listen")
-		//elevnet.intComs.newHeartbeater<-ip
-		//fmt.Println("registerNewCon:send new heartbeater")
 	}else{
 		fmt.Println("registerNewCon:connection already excist")
 	}
 }
+
 
 func deleteCon(ip string, tcpConnections map[string]net.Conn){
     _, ok :=tcpConnections[ip]
@@ -175,11 +179,13 @@ func deleteCon(ip string, tcpConnections map[string]net.Conn){
 
 
 func getConIp(con net.Conn)(ip string){
-	split:=strings.Split(con.RemoteAddr().String(),":") //splits ip-part from port
+	//splits ip-part from port
+	split:=strings.Split(con.RemoteAddr().String(),":") 
 	conIp :=split[0]
 	return conIp
 	
 }
+
 
 func (elevNet *ElevNet_s)reConnectAndSend(msg elevTypes.Message, tcpMap map[string]net.Conn){
 	elevNet.intComs.connectElev(msg.To)
