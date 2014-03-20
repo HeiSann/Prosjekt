@@ -25,14 +25,14 @@ func Init(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s)
 	fmt.Println("				fsm.lastFloor is: ", fsm.lastFloor)
 	fmt.Println("				fsm.Init: OK!")
 	return fsm
-}    
+}	
 
 
 /* Finite State Machine initializations */
 func (fsm *Fsm_s)initFsmTable(){
 	fsm.table = [][]func(){
-/*STATES:	  \	EVENTS:	//NewOrder			//FloorReached        	//Exec  				//TimerOut		//Obst				//EmgPressed
-/*IDLE       */  []func(){fsm.action_start,	action_dummy,			fsm.action_execSame,	action_dummy,	fsm.action_pause,	fsm.action_stop},
+/*STATES:	  \	EVENTS:	//NewOrder			//FloorReached			//Exec  				//TimerOut		//Obst				//EmgPressed
+/*IDLE	   */  []func(){fsm.action_start,	action_dummy,			fsm.action_execSame,	action_dummy,	fsm.action_pause,	fsm.action_stop},
 /*DOORS_OPEN */  []func(){action_dummy,		action_dummy,			action_dummy,			fsm.action_done,fsm.action_pause,	fsm.action_stop},  
 /*MOVING_UP  */  []func(){action_dummy,		fsm.action_checkOrder,	fsm.action_exec,		action_dummy,	fsm.action_pause,	fsm.action_stop},
 /*MOVING_DOWN*/  []func(){action_dummy,		fsm.action_checkOrder,	fsm.action_exec,		action_dummy,	fsm.action_pause,	fsm.action_stop},
@@ -51,13 +51,13 @@ func(self *Fsm_s)initIntComs(){
 
 func(self *Fsm_s)initExtComs(driver elevTypes.Drivers_ExtComs_s, orders elevTypes.Orders_ExtComs_s){	
 	self.ExtComs.FloorChan 			= driver.SensorChan
-	self.ExtComs.StopButtonChan	    = driver.StopButtonChan
+	self.ExtComs.StopButtonChan		= driver.StopButtonChan
 	self.ExtComs.ObsChan			= driver.ObsChan	
 	self.ExtComs.MotorChan			= driver.MotorChan
 	self.ExtComs.DoorOpenChan		= driver.DoorOpenChan
 	self.ExtComs.SetLightChan		= driver.SetLightChan
 	self.ExtComs.SetFloorIndChan	= driver.SetFloorIndChan
-	self.ExtComs.ElevPosRequest     = orders.ElevPosRequest
+	self.ExtComs.ElevPosRequest	 = orders.ElevPosRequest
 	self.ExtComs.NewOrdersChan		= orders.NewOrdersChan
 	self.ExtComs.ExecdOrderChan 	= orders.ExecdOrderChan
 	self.ExtComs.ExecRequestChan 	= orders.ExecRequestChan 
@@ -97,43 +97,43 @@ func (self *Fsm_s)update(){
 
 func (fsm *Fsm_s)generateEvents(){	
 	for{
-        select{
-            case <-fsm.ExtComs.StopButtonChan:
-			    fsm.intComs.eventChan <- EMG
-			    
-            case <-fsm.ExtComs.ObsChan:
-			    fsm.intComs.eventChan <- OBSTRUCTION
-			    
-            case floor := <-fsm.ExtComs.FloorChan: 
-                if floor != -1 && floor != fsm.lastFloor{
-                    //fsm.lastFloor = floor  //TODO: FIX!
-                   	go func(){ fsm.intComs.floorChan <- floor}()
-				    fmt.Println("				fsm.generate_events: reached new floor! lastFloor is now: ", floor) 
-				    fsm.intComs.eventChan <- FLOOR_REACHED
-		       }
-		       
-            case order:=<- fsm.ExtComs.NewOrdersChan:
-			    fmt.Println("				fsm: got new order on NewOrdersChan")
-			    
-                go func() {fsm.intComs.eventChan <- NEW_ORDER}()
-                fmt.Println("				fsm: sendt order on internal eventchan")
-                
-			    go func() {fsm.intComs.newOrderChan <- order}()
-			    fmt.Println("				fsm: sendt order on internal newOrderChan")
-			    
-		    case execOrder:= <- fsm.ExtComs.ExecResponseChan:
-		        fmt.Println("				fsm.generate_events: got ExecResponse: ", execOrder)
-			    if execOrder{
-			        fmt.Println("				fsm.generate_events: sending EXEC_ORDER on intComs.eventChan")
-				    fsm.intComs.eventChan <- EXEC_ORDER
-			    }
-			    
-            case <-fsm.intComs.timeoutChan:
-                fmt.Println("				fsm.generate_eventes: TIMEOUT")
-			    go func() {fsm.intComs.eventChan <- TIMEOUT}()	
-			    
-		    default:
-			    time.Sleep(time.Millisecond*elevTypes.SELECT_SLEEP_MS/2)	
+		select{
+			case <-fsm.ExtComs.StopButtonChan:
+				fsm.intComs.eventChan <- EMG
+				
+			case <-fsm.ExtComs.ObsChan:
+				fsm.intComs.eventChan <- OBSTRUCTION
+				
+			case floor := <-fsm.ExtComs.FloorChan: 
+				if floor != -1 && floor != fsm.lastFloor{
+					//fsm.lastFloor = floor  //TODO: FIX!
+				   	go func(){ fsm.intComs.floorChan <- floor}()
+					fmt.Println("				fsm.generate_events: reached new floor! lastFloor is now: ", floor) 
+					fsm.intComs.eventChan <- FLOOR_REACHED
+			   }
+			   
+			case order:=<- fsm.ExtComs.NewOrdersChan:
+				fmt.Println("				fsm: got new order on NewOrdersChan")
+				
+				go func() {fsm.intComs.eventChan <- NEW_ORDER}()
+				fmt.Println("				fsm: sendt order on internal eventchan")
+				
+				go func() {fsm.intComs.newOrderChan <- order}()
+				fmt.Println("				fsm: sendt order on internal newOrderChan")
+				
+			case execOrder:= <- fsm.ExtComs.ExecResponseChan:
+				fmt.Println("				fsm.generate_events: got ExecResponse: ", execOrder)
+				if execOrder{
+					fmt.Println("				fsm.generate_events: sending EXEC_ORDER on intComs.eventChan")
+					fsm.intComs.eventChan <- EXEC_ORDER
+				}
+				
+			case <-fsm.intComs.timeoutChan:
+				fmt.Println("				fsm.generate_eventes: TIMEOUT")
+				go func() {fsm.intComs.eventChan <- TIMEOUT}()	
+				
+			default:
+				time.Sleep(time.Millisecond*elevTypes.SELECT_SLEEP_MS/2)	
 		}
 	}
 }
@@ -142,13 +142,13 @@ func (fsm *Fsm_s)generateEvents(){
 /* FSM help functions */
 
 func (self *Fsm_s)answerPosRequests(){
-    pos:= elevTypes.ElevPos_t{}
-    for{
-        pos= <-self.ExtComs.ElevPosRequest
-        pos.Floor = self.lastFloor
-        pos.Direction = self.lastDir
-        self.ExtComs.ElevPosRequest <- pos
-    }
+	pos:= elevTypes.ElevPos_t{}
+	for{
+		pos= <-self.ExtComs.ElevPosRequest
+		pos.Floor = self.lastFloor
+		pos.Direction = self.lastDir
+		self.ExtComs.ElevPosRequest <- pos
+	}
 }
 
 
@@ -162,7 +162,7 @@ func (self *Fsm_s)startDown(){
 
 
 func (self *Fsm_s)startUp(){
-    fmt.Println("				fsm.start_up")
+	fmt.Println("				fsm.start_up")
 	self.ExtComs.MotorChan <- elevTypes.UP
 	self.state = MOVING_UP
 	self.lastDir = elevTypes.UP
@@ -171,14 +171,14 @@ func (self *Fsm_s)startUp(){
 
 
 func startTimer(timeOutChan chan bool, timeInterval time.Duration){
-    time.Sleep(time.Second*timeInterval)
-    timeOutChan <- true 
+	time.Sleep(time.Second*timeInterval)
+	timeOutChan <- true 
 }
 
 
 func MakeDouble(original Fsm_s) Fsm_s{
 	copy := Fsm_s{}
-    copy.table = original.table		
+	copy.table = original.table		
 	copy.state = original.state	
 	copy.lastDir = original.lastDir	
 	copy.lastFloor = original.lastFloor  
