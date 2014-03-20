@@ -44,6 +44,7 @@ type Net_ExtComs_s struct{
 	SendMsgToAll chan Message
 	DeadElev chan string
 	NewElev chan string
+	FailedTcpMsg chan Message
 }
 
 type ComsManager_ExtComs_s struct{
@@ -68,6 +69,7 @@ type ComsManager_ExtComs_s struct{
 	SendMsgToAll chan Message
 	DeadElev chan string
 	NewElev chan string
+	FailedTcpMsg chan Message
 }
 
 type Orders_ExtComs_s struct{

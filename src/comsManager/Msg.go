@@ -62,7 +62,6 @@ func (self *ComsManager_s)TcpSenderTest(to string){
 
 
 func (self *ComsManager_s)InternalCommunication(){ //change name
-	fmt.Println("\tCOMSMANAGER: New elevChannel", self.ExtComs.UpdateElevInside)
 	for{
 		select{
 		case order:=<- self.ExtComs.SendOrderUpdate:
@@ -90,6 +89,12 @@ func (self *ComsManager_s)InternalCommunication(){ //change name
 			self.ExtComs.SendMsg<-msg
 			fmt.Println("\t InternalCommunication:recieved inside order update. sending to IP:", msg.To)
 
+		case msg:=<-self.ExtComs.FailedTcpMsg:
+			if msg.Type=="ADD_ORDER"{
+				self.ExtComs.AddOrder<-msg.Order
+				fmt.Println("\t InternalCommunicasion: Recieved faild to send ADD_ORDER msg. Taking the order self")
+			}
+					
 		default:
 			time.Sleep(time.Millisecond*SELECT_SLEEP_TIME)
 		}

@@ -24,6 +24,7 @@ type InternalChan_s struct{
 	deadElev chan string
 	deadPinger chan string
 	connectToElev chan string
+	tcpFail chan elevTypes.Message
 }
 
 
@@ -49,6 +50,7 @@ func ExternalChannelsInit() elevTypes.Net_ExtComs_s{
 	extChans.SendMsgToAll =make(chan elevTypes.Message)
 	extChans.DeadElev =make(chan string)
 	extChans.NewElev = make(chan string)
+	extChans.FailedTcpMsg = make(chan elevTypes.Message)
 	return extChans
 }
 
@@ -63,6 +65,7 @@ func InternalChannelsInit()InternalChan_s{
 	internalChan.deadElev = make(chan string)
 	internalChan.deadPinger = make(chan string)
 	internalChan.connectToElev =make(chan string)
+	internalChan.tcpFail = make(chan elevTypes.Message)
 	return internalChan
 }
 

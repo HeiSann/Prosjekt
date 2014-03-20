@@ -42,6 +42,9 @@ func (elevNet *ElevNet_s)ManageTCPCom(){
         case msg:=<-elevNet.ExtComs.SendMsgToAll:
         	fmt.Println("ManageTCPCom:case sendMsgToAll")
         	elevNet.SendTcpToAll(msg, tcpConnections)
+        
+        case msg:= <-elevNet.intComs.tcpFail:
+        	elevNet.ExtComs.FailedTcpMsg<-msg
 		default:
 			time.Sleep(time.Millisecond*SLEEPTIME)
 			
@@ -100,7 +103,7 @@ trySend:
 				fmt.Println("SendTcpMsg: msg ok")
 				break trySend
 			}
-		}//id addOrderMsg, send back to self to take it
+		}//id addOrderMsg, send back to self to take it. return false so that tcpHandler knows and sends back the msg 
 		go self.reConnectAndSend(msg, tcpConnections)
 	case false:
 		fmt.Println("error, not a connection, trying to connect")
@@ -181,8 +184,11 @@ func (elevNet *ElevNet_s)reConnectAndSend(msg elevTypes.Message, tcpMap map[stri
 	elevNet.intComs.ConnectElev(msg.To)
 	ipAddr := msg.To
 	bstream, err0 := json.Marshal(msg)
-	fmt.Println(err0)
+	fmt.Println("reConectAndSend Json:", err0)
+	//json fail?
+			
 	con, ok :=tcpMap[ipAddr]
+trySend:
 	switch ok{
 	case true:
 		try:=0
@@ -193,19 +199,12 @@ func (elevNet *ElevNet_s)reConnectAndSend(msg elevTypes.Message, tcpMap map[stri
 				try=try+1		
 			}else{
 				fmt.Println("reConnectAndSend: msg ok")
-			break
+				break trySend
 			}
 		}
-		if msg.Type=="ADD_ORDER"{
-			elevNet.ExtComs.RecvMsg<-msg
-			fmt.Println("reConnectAndSend:error int send msg. Taking order self")
-		}
-		
+		elevNet.intComs.tcpFail<-msg				
 	case false:
-		if msg.Type=="ADD_ORDER"{
-			elevNet.ExtComs.RecvMsg<-msg
+			elevNet.intComs.tcpFail<-msg
 			fmt.Println("reConnectAndSend:error in connection, reConnectFailed, taking order self")
-			//send addOrder msg back to elevator !!!
-		}
 	}
 }
