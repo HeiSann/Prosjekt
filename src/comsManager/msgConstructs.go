@@ -13,6 +13,7 @@ func constructUpdateMsg(myIp string, order elevTypes.Order_t, actionElev string)
 	return msg
 }
 
+
 func constructNewOrderMsg(ToIpadr string, myIp string, order elevTypes.Order_t)elevTypes.Message{
 	msg:=elevTypes.Message{} 
 	msg.To=ToIpadr
@@ -21,7 +22,6 @@ func constructNewOrderMsg(ToIpadr string, myIp string, order elevTypes.Order_t)e
    	msg.Order= order
 	return msg
 }
-
 
 
 func constructCostMsg(myIp string, toIp string, order elevTypes.Order_t, cost int)elevTypes.Message{
@@ -33,6 +33,7 @@ func constructCostMsg(myIp string, toIp string, order elevTypes.Order_t, cost in
 	msg.Order = order	 
 	return msg
 }
+
 
 func constructNeedCostMsg(myIP string, order elevTypes.Order_t)elevTypes.Message{
 	msg:=elevTypes.Message{}

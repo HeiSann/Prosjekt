@@ -41,7 +41,7 @@ func (comsMan *ComsManager_s)RecieveMessageFromNet(){
 }
 
 
-func (self *ComsManager_s)InternalCommunication(){ 
+func (self *ComsManager_s)ManageCommunicationFromNetAndOrder(){ 
 	for{
 		select{
 		case order:=<- self.ExtComs.SendOrderUpdate:
