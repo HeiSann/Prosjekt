@@ -137,7 +137,7 @@ func listenButtons(buttonChan chan elevTypes.Button){
 			}
 			buttonList[key] = newValue      
 		}
-		time.Sleep(time.Millisecond*elevTypes.SLOW_DOWM_MUTHA_FUKKA)
+		time.Sleep(time.Millisecond*elevTypes.SELECT_SLEEP_MS)
 	}
 }
 
@@ -171,7 +171,7 @@ func listenSensors(sensorChan chan int){
             }
 			
         }
-        time.Sleep(time.Millisecond*elevTypes.SLOW_DOWM_MUTHA_FUKKA)
+        time.Sleep(time.Millisecond*elevTypes.SELECT_SLEEP_MS)
 	}   
 }
 
@@ -194,7 +194,7 @@ func listenCtrlSignals(setLightChan chan elevTypes.Light_t, setFloorIndChan chan
                     ClearBit(DOOR_OPEN)
                 }
         }
-        time.Sleep(time.Millisecond*elevTypes.SLOW_DOWM_MUTHA_FUKKA)
+        time.Sleep(time.Millisecond*elevTypes.SELECT_SLEEP_MS)
     }
 }
 

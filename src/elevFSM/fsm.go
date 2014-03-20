@@ -268,7 +268,7 @@ func (fsm *Fsm_s)generateEvents(){
 			    go func() {fsm.intComs.eventChan <- TIMEOUT}()	
 			    
 		    default:
-			    time.Sleep(time.Millisecond*elevTypes.SLOW_DOWM_MUTHA_FUKKA/2)	
+			    time.Sleep(time.Millisecond*elevTypes.SELECT_SLEEP_MS/2)	
 		}
 	}
 }

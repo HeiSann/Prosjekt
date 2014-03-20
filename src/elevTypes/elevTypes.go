@@ -3,7 +3,7 @@ package elevTypes
 const N_FLOORS = 4
 const N_DIR = 3
 const DOOR_OPEN_TIME = 3 //millisec
-const SLOW_DOWM_MUTHA_FUKKA = 20
+const SELECT_SLEEP_MS = 20
 
 
 type Direction_t int 
