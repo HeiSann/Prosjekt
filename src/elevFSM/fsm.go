@@ -274,12 +274,13 @@ func (fsm *Fsm_s)generateEvents(){
 	}
 }
 
-func (copy *Fsm_s)MakeDouble(original Fsm_s){
+func MakeDouble(original Fsm_s) Fsm_s{
+	copy := Fsm_s{}
     copy.table = original.table		
 	copy.state = original.state	
 	copy.lastDir = original.lastDir	
 	copy.lastFloor = original.lastFloor  
 	copy.intComs = original.intComs
 	copy.ExtComs = original.ExtComs
-
+	return copy
 }
