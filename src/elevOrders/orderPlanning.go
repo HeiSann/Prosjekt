@@ -1,30 +1,25 @@
 package elevOrders
 
 import(
-	"fmt"
 	"math"
 	"elevTypes"
 )
 
 
 func orderPlanning_getNextOrder(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool,order elevTypes.Order_t) elevTypes.Order_t{
-	fmt.Println("			order.get_next_order: with order: ", order)
-	fmt.Println("			order.get_next_order: queue is now: ", queue)
+	
 	switch(order.Direction){
 		case elevTypes.UP:
 			orderUpAbove := nextOrderAbove(order.Floor, queue)
 			if orderUpAbove.Active { 
-				fmt.Println("			order.get_next_order: returning orderUpAbove: ", orderUpAbove)
 				return orderUpAbove }
 			
 			orderDown := nextOrderBelow(elevTypes.N_FLOORS-1, queue)
 			if orderDown.Active { 
-				fmt.Println("			order.get_next_order: returning orderDown: ", orderDown)
 				return orderDown }
 			
 			orderUpBelow := nextOrderAbove(0, queue)
 			if orderUpBelow.Active { 
-				fmt.Println("			order.get_next_order: returning orderUpBelow: ", orderUpBelow)
 				return orderUpBelow }
 			
 			/*  no orders left  */
@@ -33,17 +28,14 @@ func orderPlanning_getNextOrder(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool,
 		case elevTypes.DOWN:
 			orderDown_below := nextOrderBelow(order.Floor, queue)
 			if orderDown_below.Active { 
-				fmt.Println("			order.get_next_order: returning orderDown_below: ", orderDown_below)
 				return orderDown_below }
 			
 			orderUpBelow := nextOrderAbove(0, queue)
 			if orderUpBelow.Active{ 
-				fmt.Println("			order.get_next_order: returning orderUpBelow: ", orderUpBelow)
 				return orderUpBelow }
 			
 			orderDownAbove := nextOrderBelow(elevTypes.N_FLOORS-1, queue)
 			if orderDownAbove.Active{ 
-				fmt.Println("			order.get_next_order: returning orderDownAbove: ", orderDownAbove)
 				return orderDownAbove}
 			/*  no orders left  */
 			return elevTypes.Order_t{}
@@ -51,26 +43,21 @@ func orderPlanning_getNextOrder(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool,
 		case elevTypes.NONE:
 			orderUpAbove := nextOrderAbove(order.Floor, queue)
 			if orderUpAbove.Active { 
-				fmt.Println("			order.get_next_order: returning orderUpAbove: ", orderUpAbove)
 				return orderUpAbove }
 
 			orderDown_below := nextOrderBelow(order.Floor, queue)
 			if orderDown_below.Active { 
-				fmt.Println("			order.get_next_order: returning orderDown_below: ", orderDown_below)
 				return orderDown_below }
 
 			orderDownAbove := nextOrderBelow(elevTypes.N_FLOORS-1, queue)
 			if orderDownAbove.Active{ 
-				fmt.Println("			order.get_next_order: returning orderDownAbove: ", orderDownAbove)
 				return orderDownAbove}
 
 			orderUpBelow := nextOrderAbove(0, queue)
 			if orderUpBelow.Active { 
-				fmt.Println("			order.get_next_order: returning orderUpBelow: ", orderUpBelow)
 				return orderUpBelow }
 			return elevTypes.Order_t{}
 		default:
-			fmt.Println("			order.get_next_order: dir on request = NONE. this when first order is same floor")
 			return order
 	}
 }  
@@ -81,16 +68,13 @@ func nextOrderAbove(thisFloor int, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]boo
 	for floor := thisFloor; floor < elevTypes.N_FLOORS; floor++{
 			orderOut = queue[floor][elevTypes.NONE]
 			orderUp = queue[floor][elevTypes.UP]
-			if orderOut{
-				fmt.Println("			next_order_above: returning next: ", elevTypes.Order_t{floor, elevTypes.NONE, true}) 
+			if orderOut{ 
 				return elevTypes.Order_t{floor, elevTypes.NONE, true}
 			}
 			if orderUp{
-				fmt.Println("			next_order_above returning next: ", elevTypes.Order_t{floor, elevTypes.UP, true}) 
 				return elevTypes.Order_t{floor, elevTypes.UP, true}
 			}
-		}
-	fmt.Println("			next_order_above found nothing, returning empty:  ", elevTypes.Order_t{}) 
+		} 
 	return elevTypes.Order_t{}
 }
 
@@ -100,16 +84,13 @@ func nextOrderBelow(thisFloor int, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]boo
 		for floor := thisFloor; floor >= 0; floor--{
 			orderOut = queue[floor][elevTypes.NONE]
 			orderDown = queue[floor][elevTypes.DOWN]
-			if orderOut{
-				fmt.Println("			next_order_below: returning next: ", elevTypes.Order_t{floor, elevTypes.NONE, true}) 
+			if orderOut{ 
 				return elevTypes.Order_t{floor, elevTypes.NONE, true}
 			}
 			if orderDown{
-				fmt.Println("			next_order_below: returning next: ", elevTypes.Order_t{floor, elevTypes.DOWN, true}) 
 				return elevTypes.Order_t{floor, elevTypes.DOWN, true}
 			}
 		}
-	fmt.Println("			next_order_below found nothing, returning empty:  ", elevTypes.Order_t{}) 
 	return elevTypes.Order_t{}
 }
 

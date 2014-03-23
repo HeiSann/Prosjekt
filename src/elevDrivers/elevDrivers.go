@@ -66,7 +66,6 @@ func motorCtrl(motorChan chan elevTypes.Direction_t){
 
 		for {
 		   newDir=<-motorChan
-			fmt.Println("		motorCtrl recv newDir=", newDir)
 			switch newDir{
 				case elevTypes.UP:
 					ClearBit(MOTORDIR)
@@ -129,7 +128,6 @@ func listenButtons(buttonChan chan elevTypes.Button){
 		for key, button := range buttonMap {
 			newValue := ReadBit(key)
 			if newValue && !buttonList[key] {
-				fmt.Println("		Drivers.listenButtonsbutton: button pressed: ", button)
 		   		newButton := button
 				go func() {	
 					buttonChan <- newButton

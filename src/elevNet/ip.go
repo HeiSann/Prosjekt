@@ -2,14 +2,12 @@ package elevNet
 
 import (
 	"net"
-	"fmt"
 	"strings"
 )
 func GetMyIP() string{
 	allIPs, err := net.InterfaceAddrs()
 	if err != nil {
-		fmt.Println("Error receiving IPs")
-		return ""
+	    return ""
 	}
 			
 	uncutIP := allIPs[1].String()

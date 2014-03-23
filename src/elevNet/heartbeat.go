@@ -1,7 +1,6 @@
 package elevNet
 import( "time"
 		"elevTypes"
-		"fmt"
 	   )
 	   
 const HEARTBEAT_TIMEOUT_MILLI = 70
@@ -22,13 +21,12 @@ func (elevNet *ElevNet_s) RefreshNetwork(){
 			go elevNet.intComs.performTimeControl(elevHeartbeatTimes)
 						
 		case deadIp := <-elevNet.intComs.deadHeartbeater:
-			fmt.Println("Refresh Newtork:heartbeat case deadIP")
 			elevNet.deleteHeartbeater(elevHeartbeatTimes,deadIp)
 		default:
 			time.Sleep(time.Millisecond*SLEEPTIME)
 					
-		}//end select
-	}//end for
+		}
+	}
 }
 
 
@@ -37,7 +35,6 @@ func addHeartbeater(heartbeatMap map[string]time.Time,ip string){
 		
 	if !inMap{
 		heartbeatMap[ip]=time.Now()
-		fmt.Println("new heartbeater")
 	}
 }
 
@@ -48,8 +45,8 @@ func (self *ElevNet_s) updateHeartbeatTime(heartbeatMap map[string]time.Time, ms
 	if !inMap{
 		self.intComs.connectToElev<-heartbeatIP
 		self.ExtComs.NewElev<-heartbeatIP
-		fmt.Println("upDateHeartbeatTime:newElevator send to comsManager ")
 	}
+	
 	limitStamp:=time.Now().Add(time.Millisecond*HEARTBEAT_TIMEOUT_MILLI)
 	heartbeatMap[msg.From]=limitStamp
 }
@@ -58,10 +55,8 @@ func (self *ElevNet_s) updateHeartbeatTime(heartbeatMap map[string]time.Time, ms
 func (toRefresh *InternalChan_s)performTimeControl(heartbeatMap map[string]time.Time){
 	currentTime :=time.Now()
 	for ip,heartbeattime := range heartbeatMap{
-		if currentTime.After(heartbeattime){
-			fmt.Println("performTimeControl :oh no, my friend died")
+		if currentTime.After(heartbeattime){			
 			toRefresh.deadHeartbeater<-ip	
-			fmt.Println("performTimeControl: deadip sendt")		
 		}
 	}
 }
@@ -71,7 +66,6 @@ func (self *ElevNet_s)deleteHeartbeater(heartbeatMap map[string]time.Time, ip st
 	delete(heartbeatMap,ip)
 	self.intComs.deadElev<-ip
 	self.ExtComs.DeadElev<-ip	
-	fmt.Println("deleteHeartbeater: deleted dead heartbeater from map. notified other modules about dead elevator", self.ExtComs.DeadElev)
 }
 
 

@@ -1,7 +1,6 @@
 package elevNet
 import(
 	"net"
-	"fmt"	
 	"strings"	
 	"elevTypes"
 	"time"
@@ -15,37 +14,29 @@ const SEND_ATMPTS = 5
 
 
 func (elevNet *ElevNet_s)ManageTCPCom(){	
-	fmt.Println("go tcp manager")
 	go elevNet.intComs.listenForTcpCon()
 
 	tcpConnections:= make(map[string]net.Conn)
-	fmt.Println("ManageTCPCom channe: ",elevNet.ExtComs.SendMsgToAll)
 	for {	
 		select{		
 		
 		case newTcpCon := <-elevNet.intComs.newConn:
-			fmt.Println("ManageTCPCom :newconn")
 			elevNet.registerNewCon(newTcpCon, tcpConnections)
 			
 		case ip := <-elevNet.intComs.connectToElev:
-			fmt.Println("ManageTCPCom:case connetct to")
 			go elevNet.intComs.connectElev(ip)
 			
 		case msg := <-elevNet.ExtComs.SendMsg:
-			fmt.Println("ManageTcpCom: case send")
 			go elevNet.sendTcpMsg(msg, tcpConnections)
 			
 		case ip := <-elevNet.intComs.deadElev:
-				fmt.Println("ManageTCPCom:case dead")
 			deleteCon(ip, tcpConnections)
 			
 		case msg:=<-elevNet.ExtComs.SendMsgToAll:
-			fmt.Println("ManageTCPCom:case sendMsgToAll")
 			elevNet.sendTcpToAll(msg, tcpConnections)
 		
 		case msg:= <-elevNet.intComs.tcpFail:
 			elevNet.ExtComs.FailedTcpMsg<-msg
-			fmt.Println("ManageTCPCom:case tcpFail")
 		default:
 			time.Sleep(time.Millisecond*SLEEPTIME)
 			
@@ -82,8 +73,7 @@ func (toManager *InternalChan_s) listenForTcpCon(){
 		if err != nil {
 			return
 		}else{
-			toManager.newConn<-con
-			fmt.Println("listenTcpCon: recieved connection, sending to handle")   			
+			toManager.newConn<-con 			
    		}
 	time.Sleep(time.Millisecond*SLEEPTIME)
    	}
@@ -101,16 +91,13 @@ trySend:
 		for try < SEND_ATMPTS{
 			_, err := con.Write(bstream)
 			if err!=nil{
-				fmt.Println("SendTcpMsg:failed to send msg")
 				try=try+1		
 			}else{
-				fmt.Println("SendTcpMsg: msg ok")
 				break trySend
 			}
 		}
 		go self.reConnectAndSend(msg, tcpConnections)
 	case false:
-		fmt.Println("error, not a connection, trying to connect")
 		go self.reConnectAndSend(msg, tcpConnections)		
 	}
 }	
@@ -119,7 +106,6 @@ trySend:
 func (self *ElevNet_s)sendTcpToAll(msg elevTypes.Message, tcpConnections map[string]net.Conn){
 	for ip, _ := range tcpConnections{
 		msg.To=ip
-		fmt.Println("SendTcpToAll:SendTcpToAll:",ip)
 		self.sendTcpMsg(msg,tcpConnections)
 	}
 }
@@ -130,17 +116,13 @@ func (toManager *InternalChan_s)connectElev(ipAdr string){
 	for atmpts < CON_ATMPTS{
 		serverAddr, err := net.ResolveTCPAddr("tcp",ipAdr+":"+TCP_PORT)
 		if err != nil {
-			fmt.Println("ConnectElev:Error Resolving Address")
 			atmpts++
 		}else{
 			con, err := net.DialTCP("tcp", nil,serverAddr);
 			if err != nil {
-				fmt.Println("ConnectElev:Error DialingTCP")
 				atmpts++
 			}else{
-				fmt.Println("ConnectElev:connection ok")
 				toManager.newConn<-con
-				fmt.Println("ConnectElev:sendt con on chan")
 				break
 			}
 		}
@@ -150,30 +132,22 @@ func (toManager *InternalChan_s)connectElev(ipAdr string){
 
 
 func (elevnet *ElevNet_s) registerNewCon (con net.Conn, tcpConnections map[string]net.Conn){
-	fmt.Println("registerNewCon: handle new Con")
 	ip:= getConIp(con)
 
 	_, ok := tcpConnections[ip]
 	
 	if !ok{	
-		fmt.Println(ok)
-		fmt.Println("registerNewCon:connection not in map, adding connection")
 		tcpConnections[ip]=con
 		go elevnet.listenForTcpMsg(con)
-		fmt.Println("registerNewCon:started to listen")
-	}else{
-		fmt.Println("registerNewCon:connection already excist")
 	}
 }
 
 
 func deleteCon(ip string, tcpConnections map[string]net.Conn){
 	_, ok :=tcpConnections[ip]
-	if !ok{
-		fmt.Println("deleteCon:connection already lost")
-	}else{
+	if ok{
 		tcpConnections[ip].Close()
-		delete(tcpConnections,ip)  
+		delete(tcpConnections,ip)
 	}
 }
 
@@ -190,9 +164,7 @@ func getConIp(con net.Conn)(ip string){
 func (elevNet *ElevNet_s)reConnectAndSend(msg elevTypes.Message, tcpMap map[string]net.Conn){
 	elevNet.intComs.connectElev(msg.To)
 	ipAddr := msg.To
-	bstream, err0 := json.Marshal(msg)
-	fmt.Println("reConectAndSend Json:", err0)
-	//json fail?
+	bstream, _ := json.Marshal(msg)
 			
 	con, ok :=tcpMap[ipAddr]
 trySend:
@@ -202,16 +174,13 @@ trySend:
 		for try < SEND_ATMPTS{
 			_, err := con.Write(bstream)
 			if err!=nil{
-				fmt.Println("reConnectAndSend:failed to send msg")
 				try=try+1		
 			}else{
-				fmt.Println("reConnectAndSend: msg ok")
 				break trySend
 			}
 		}
 		elevNet.intComs.tcpFail<-msg				
 	case false:
 			elevNet.intComs.tcpFail<-msg
-			fmt.Println("reConnectAndSend:error in connection, reConnectFailed, taking order self")
 	}
 }
