@@ -7,7 +7,7 @@ import(
 )
 
 
-func getNextOrder(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool,order elevTypes.Order_t) elevTypes.Order_t{
+func orderPlanning_getNextOrder(queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool,order elevTypes.Order_t) elevTypes.Order_t{
 	fmt.Println("			order.get_next_order: with order: ", order)
 	fmt.Println("			order.get_next_order: queue is now: ", queue)
 	switch(order.Direction){
@@ -114,7 +114,7 @@ func nextOrderBelow(thisFloor int, queue[elevTypes.N_FLOORS][elevTypes.N_DIR]boo
 }
 
 
-func getScore(order elevTypes.Order_t, elev elevTypes.ElevPos_t, queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool) int{
+func orderPlanning_getScore(order elevTypes.Order_t, elev elevTypes.ElevPos_t, queue [elevTypes.N_FLOORS][elevTypes.N_DIR]bool) int{
 	order_already_added := queue[order.Floor][order.Direction] || queue[order.Floor][elevTypes.NONE]
 	n_order := countOrders(queue)
 

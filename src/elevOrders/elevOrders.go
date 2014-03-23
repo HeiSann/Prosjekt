@@ -32,7 +32,7 @@ func Init(ip string, driver elevTypes.Drivers_ExtComs_s, coms elevTypes.ComsMana
 	extcoms.AddOrder			= coms.AddOrder
 	extcoms.SendOrderUpdate 	= coms.SendOrderUpdate
 	extcoms.RecvOrderUpdate 	= coms.RecvOrderUpdate
-	extcoms.AuctionDeadElev	 = coms.AuctionDeadElev
+	extcoms.AuctionDeadElev		= coms.AuctionDeadElev
 	extcoms.CheckNewElev		= coms.CheckNewElev
 	extcoms.UpdateElevInside	= coms.UpdateElevInside	
 	//Channels to FSM
@@ -64,7 +64,7 @@ func (self *Orders_s)orderHandler(){
 		case order:= <-self.ExtComs.RequestScoreChan:
 			fmt.Println("			order.orderHandler: recieved on RequestScoreChan, order: ",order) 
 			elevPos:= self.getElevPos()
-			score := getScore(order, elevPos, self.queues[self.MY_IP]) 
+			score := orderPlanning_getScore(order, elevPos, self.queues[self.MY_IP]) 
 			self.ExtComs.RespondScoreChan <- score
 			
 		case order:=<-self.ExtComs.AddOrder:
@@ -98,7 +98,7 @@ func (self *Orders_s)orderHandler(){
 			fmt.Println("			orders.orderHandler: updating queue success! trying to send: self.ExtComs.SendOrderUpdate <- order. ChanID: ", self.ExtComs.SendOrderUpdate)
 			self.ExtComs.SendOrderUpdate <- order
 			fmt.Println("			orders.orderHandler: orderUpdate sendt! trying to check nextOrder")
-			nextOrder:= getNextOrder(self.queues[self.MY_IP], order)
+			nextOrder:= orderPlanning_getNextOrder(self.queues[self.MY_IP], order)
 			fmt.Println("			orders.orderHandler: got execdOrder: ", order)
 			// if orders pending, send next order to elevFSM
 			if nextOrder.Active{
@@ -110,7 +110,7 @@ func (self *Orders_s)orderHandler(){
 			fmt.Println("			orders.orderHandler: got execRequest: ", elevPos)
 			queue := self.queues[self.MY_IP]
 			order := elevTypes.Order_t{elevPos.Floor, elevPos.Direction, false} 
-			next_order:= getNextOrder(queue, order)
+			next_order:= orderPlanning_getNextOrder(queue, order)
 			fmt.Println("			orders.orderHandler: elevPos: ", elevPos)
 			fmt.Println("			orders.orderHandler: next_order: ", next_order)
 			if elevPos.Floor == next_order.Floor{
@@ -165,7 +165,7 @@ func (self *Orders_s)updateQueue(order elevTypes.Order_t, IP string){
 			if IP == self.MY_IP{ 
 				self.deleteOrder(order, IP)
 
-				next_order := getNextOrder(self.queues[IP], order)
+				next_order := orderPlanning_getNextOrder(self.queues[IP], order)
 				//check for double-order executions
 				fmt.Println("			orders.updating_queue: order was: ", order)
 				fmt.Println("			orders.updating_queue: next_order is: ", next_order)
