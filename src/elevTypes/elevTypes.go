@@ -8,32 +8,32 @@ const SELECT_SLEEP_MS = 20
 
 type Direction_t int 
 const (
-    UP Direction_t = iota
-    DOWN
-    NONE
+	UP Direction_t = iota
+	DOWN
+	NONE
 )
 
 type Button struct{
-	Floor int    
-	Dir Direction_t          
+	Floor int	
+	Dir Direction_t		  
 }
 
 type Light_t struct{
-   Floor       int
+   Floor	   int
    Direction   Direction_t   
-   Set      	bool
+   Set	  	bool
 }
 
 type Order_t struct{
-   Floor       int
+   Floor	   int
    Direction   Direction_t   
-   Active      bool
+   Active	  bool
 }
 
 type ElevPos_t struct{
-   Floor       int
+   Floor	   int
    Direction   Direction_t   
-   Status      bool
+   Status	  bool
 }
 
 type Net_ExtComs_s struct{
@@ -60,7 +60,7 @@ type ComsManager_ExtComs_s struct{
 	AuctionDeadElev chan string
 	CheckNewElev chan Message
 	UpdateElevInside chan Message
-      
+	  
 	/*inited in net*/
 	RecvMsg chan Message
 	SendMsg chan Message  
@@ -74,8 +74,8 @@ type ComsManager_ExtComs_s struct{
 
 type Orders_ExtComs_s struct{
 	/* Channels initialized in orders */
-	ElevPosRequest      chan ElevPos_t
-	NewOrdersChan    	chan Order_t 
+	ElevPosRequest	  chan ElevPos_t
+	NewOrdersChan		chan Order_t 
 	ExecdOrderChan  	chan ElevPos_t	
 	ExecRequestChan  	chan ElevPos_t	
 	ExecResponseChan	chan bool	
@@ -91,8 +91,8 @@ type Orders_ExtComs_s struct{
 	CheckNewElev		chan Message
 	UpdateElevInside 	chan Message
 	/* Channels from driver */
-	ButtonChan        <-chan Button
-	SetLightChan      chan<- Light_t
+	ButtonChan		<-chan Button
+	SetLightChan	  chan<- Light_t
 }
 
 type Drivers_ExtComs_s struct{
@@ -104,20 +104,20 @@ type Drivers_ExtComs_s struct{
 	MotorChan 		chan<- Direction_t
 	SetLightChan 	chan<- Light_t
 	SetFloorIndChan chan<- int
-	DoorOpenChan    chan<- bool
+	DoorOpenChan	chan<- bool
 }
 
 type Fsm_ExtComs_s struct{
 	/* Channels from driver */
-	FloorChan         <-chan int
-	StopButtonChan    <-chan bool
-	ObsChan           <-chan bool
-	MotorChan         chan<- Direction_t
-	DoorOpenChan      chan<- bool
-	SetLightChan      chan<- Light_t
+	FloorChan		 <-chan int
+	StopButtonChan	<-chan bool
+	ObsChan		   <-chan bool
+	MotorChan		 chan<- Direction_t
+	DoorOpenChan	  chan<- bool
+	SetLightChan	  chan<- Light_t
 	SetFloorIndChan   chan<- int 
 	/* Channels from orders*/
-	ElevPosRequest      chan ElevPos_t
+	ElevPosRequest	  chan ElevPos_t
 	NewOrdersChan		chan Order_t 
 	ExecdOrderChan		chan ElevPos_t	
 	ExecRequestChan		chan ElevPos_t	

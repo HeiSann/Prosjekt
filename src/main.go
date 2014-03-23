@@ -10,11 +10,11 @@ import(
 )
 
 type Elevator struct{
-	driver      elevDrivers.Drivers_s
-	net         elevNet.ElevNet_s
-	coms        comsManager.ComsManager_s
-	orders      elevOrders.Orders_s
-	fsm         elevFSM.Fsm_s
+	driver	elevDrivers.Drivers_s
+	net		elevNet.ElevNet_s
+	coms	comsManager.ComsManager_s
+	orders	elevOrders.Orders_s
+	fsm		elevFSM.Fsm_s
 }
 
 func main(){
@@ -28,8 +28,8 @@ func main(){
 	var fsm = elevFSM.Init(drivers.ExtComs, orders.ExtComs)
    
 	var Elev = Elevator{drivers, net, coms, orders, fsm}
-       
+	   
 	<-end
 	fmt.Println(Elev)
-    
+	
 }

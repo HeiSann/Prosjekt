@@ -12,14 +12,14 @@ type ComsManager_s struct{
 	
 }
 
-    
+	
 type InternalChan_s struct{
 	auctionWinner 	chan string
 	newCostMsg 		chan elevTypes.Message
 	toAuction 		chan elevTypes.Message
-    auctionDone 	chan string
-    costMsg 		chan elevTypes.Message
-    needCost		chan elevTypes.Order_t
+	auctionDone 	chan string
+	costMsg 		chan elevTypes.Message
+	needCost		chan elevTypes.Order_t
 }
 
 

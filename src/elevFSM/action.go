@@ -8,7 +8,7 @@ import (
 
 /* Finite State Machine Actions */
 func (self *Fsm_s)action_start(){
-    //fmt.Println("				fsm.action_start") 
+	//fmt.Println("				fsm.action_start") 
 	order := <- self.intComs.newOrderChan
 	fmt.Println("				fsm.action_start: got order on intComs.newOrderChan: ", order)
 	curr_floor:= self.lastFloor	
@@ -25,7 +25,7 @@ func (self *Fsm_s)action_start(){
 }
 
 func (self *Fsm_s)action_checkOrder(){
-    //fmt.Println("				fsm.action_checkOrder")
+	//fmt.Println("				fsm.action_checkOrder")
 	floor:= <-self.intComs.floorChan
 	self.lastFloor = floor
 	self.ExtComs.SetFloorIndChan <- self.lastFloor
@@ -38,7 +38,7 @@ func (self *Fsm_s)action_checkOrder(){
 
 
 func (self *Fsm_s)action_execSame(){
-    //fmt.Println("				fsm.action_execSame")
+	//fmt.Println("				fsm.action_execSame")
 	self.ExtComs.DoorOpenChan <- true
 	go startTimer(self.intComs.timeoutChan, elevTypes.DOOR_OPEN_TIME)
 	self.lastDir = elevTypes.NONE
@@ -48,7 +48,7 @@ func (self *Fsm_s)action_execSame(){
 
 
 func (self *Fsm_s)action_exec(){
-    fmt.Println("				action_exec")
+	fmt.Println("				action_exec")
 	self.ExtComs.MotorChan <- elevTypes.NONE
 	self.ExtComs.DoorOpenChan <- true
 	go startTimer(self.intComs.timeoutChan, elevTypes.DOOR_OPEN_TIME)
@@ -58,7 +58,7 @@ func (self *Fsm_s)action_exec(){
 
 
 func (self *Fsm_s)action_done(){
-    //fmt.Println("				fsm.action_done")
+	//fmt.Println("				fsm.action_done")
 	self.ExtComs.DoorOpenChan <- false
 	self.state = IDLE
 	fmt.Println("				fsm: IDLE")
