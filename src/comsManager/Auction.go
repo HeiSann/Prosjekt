@@ -64,7 +64,7 @@ func (self *ComsManager_s)HandleAuctionWinner(winner string, order elevTypes.Ord
 	if winner==self.Ip{
 		self.ExtComs.AddOrder<-order
 	}else if winner!=self.Ip{
-		//send update to self, in case other elevators die not gettin updated
+		//send update to self, in case other elevators die not getting updated
 		self.ExtComs.RecvOrderUpdate<-OrderUpdate 
 		//send update to winner
 		msg:= constructNewOrderMsg(winner,self.Ip, order)

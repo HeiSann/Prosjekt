@@ -93,7 +93,7 @@ func motorCtrl(motorChan chan elevTypes.Direction_t){
 			 	   		 	SetBit(MOTORDIR)
 			 		  	  	WriteAnalog(MOTOR,SPEED_STOP)
 						case elevTypes.NONE:
-							fmt.Println("		elevDrivers.motorCtrl: lastDir=newDir=elevTypes.NONE, problem?")
+							
 				  		default:
 					 		fmt.Println("		elevDrivers.motorCtrl: ERROR, illegal lastDir")
 					}

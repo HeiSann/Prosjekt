@@ -30,8 +30,7 @@ func (comsMan *ComsManager_s)RecieveMessageFromNet(){
 				comsMan.ExtComs.RecvOrderUpdate<-msg
 
 		default:
-			fmt.Println("\t", msg.From)
-			fmt.Println("\tnot able to read msg header. Something went terribly wrong, oh god, i have dissapointed the other elevators, they will hate me so much. Pls ctrlC me right now I cant stand this pain any longer")
+			fmt.Println("not able to read msg header")
 	   }
 	}
 }
